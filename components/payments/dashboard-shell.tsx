@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useDeferredValue, useEffect, useState, type ComponentType } from "react";
 import {
@@ -26,6 +26,7 @@ import { StatusBadge } from "@/components/payments/status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ToastStack, type ToastItem } from "@/components/ui/toast-stack";
+import { approvePaymentById } from "@/services/payment-approval-service";
 import {
   formatBenefitType,
   formatCurrency,
@@ -71,6 +72,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
   );
   const [activePayment, setActivePayment] = useState<ActivePaymentState>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = normalizeText(deferredSearch);
 
@@ -117,6 +119,27 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
       ...current,
       [batchId]: !current[batchId]
     }));
+  }
+
+  async function handleApprovePayment(batchId: string, paymentId: string) {
+    if (processingPaymentId === paymentId) {
+      return;
+    }
+
+    setProcessingPaymentId(paymentId);
+
+    try {
+      const result = await approvePaymentById(paymentId);
+      updatePaymentStatus(batchId, String(result.id), result.status);
+    } catch {
+      notify(
+        "Falha ao aprovar pagamento",
+        "Nao foi possivel concluir a aprovacao deste pagamento agora.",
+        "warning"
+      );
+    } finally {
+      setProcessingPaymentId(null);
+    }
   }
 
   function updatePaymentStatus(batchId: string, paymentId: string, status: PaymentStatus) {
@@ -342,10 +365,11 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
               onExpandToggle={() => toggleExpanded(batch.id)}
               onToggleAllSelections={toggleAllSelections}
               onPaymentSelectionChange={toggleSelection}
-              onPaymentApprove={(paymentId) => updatePaymentStatus(batch.id, paymentId, "APPROVED")}
+              onPaymentApprove={(paymentId) => void handleApprovePayment(batch.id, paymentId)}
               onPaymentReject={(paymentId) => updatePaymentStatus(batch.id, paymentId, "REJECTED")}
               onPaymentRestore={(paymentId) => updatePaymentStatus(batch.id, paymentId, "PENDING")}
               onShowDetails={(paymentId) => setActivePayment({ batchId: batch.id, paymentId })}
+              processingPaymentId={processingPaymentId}
             />
           ))}
         </div>
@@ -356,13 +380,14 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
       <PaymentDetailsDrawer
         batch={activeBatch}
         payment={currentPayment}
+        processingPaymentId={processingPaymentId}
         onClose={() => setActivePayment(null)}
         onApprove={() => {
           if (!activePayment) {
             return;
           }
 
-          updatePaymentStatus(activePayment.batchId, activePayment.paymentId, "APPROVED");
+          void handleApprovePayment(activePayment.batchId, activePayment.paymentId);
         }}
         onReject={() => {
           if (!activePayment) {
@@ -442,6 +467,7 @@ type BatchCardProps = {
   onPaymentReject: (paymentId: string) => void;
   onPaymentRestore: (paymentId: string) => void;
   onShowDetails: (paymentId: string) => void;
+  processingPaymentId: string | null;
 };
 
 function BatchCard({
@@ -456,7 +482,8 @@ function BatchCard({
   onPaymentApprove,
   onPaymentReject,
   onPaymentRestore,
-  onShowDetails
+  onShowDetails,
+  processingPaymentId
 }: BatchCardProps) {
   const totalValue = batch.payments.reduce((total, payment) => total + payment.grossAmount, 0);
   const selectedCount = batch.payments.filter(
@@ -533,6 +560,7 @@ function BatchCard({
             onPaymentReject={onPaymentReject}
             onPaymentRestore={onPaymentRestore}
             onShowDetails={onShowDetails}
+            processingPaymentId={processingPaymentId}
           />
         ) : null}
       </div>
@@ -573,6 +601,7 @@ type PaymentListProps = {
   onPaymentReject: (paymentId: string) => void;
   onPaymentRestore: (paymentId: string) => void;
   onShowDetails: (paymentId: string) => void;
+  processingPaymentId: string | null;
 };
 
 function PaymentList({
@@ -587,7 +616,8 @@ function PaymentList({
   onPaymentApprove,
   onPaymentReject,
   onPaymentRestore,
-  onShowDetails
+  onShowDetails,
+  processingPaymentId
 }: PaymentListProps) {
   const pendingPayments = batchPayments.filter((payment) => payment.status === "PENDING");
   const visiblePendingIds = payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id);
@@ -747,7 +777,7 @@ function PaymentList({
                       </Button>
                       {payment.status === "PENDING" ? (
                         <>
-                          <Button type="button" variant="success" size="sm" onClick={() => onPaymentApprove(payment.id)}>
+                          <Button type="button" variant="success" size="sm" disabled={processingPaymentId === payment.id} onClick={() => onPaymentApprove(payment.id)}>
                             Aprovar
                           </Button>
                           <Button type="button" variant="danger" size="sm" onClick={() => onPaymentReject(payment.id)}>
@@ -781,6 +811,7 @@ function PaymentList({
 type PaymentDetailsDrawerProps = {
   batch?: PaymentBatch;
   payment?: Payment;
+  processingPaymentId: string | null;
   onClose: () => void;
   onApprove: () => void;
   onReject: () => void;
@@ -797,6 +828,7 @@ type PaymentHistoryItem = {
 function PaymentDetailsDrawer({
   batch,
   payment,
+  processingPaymentId,
   onClose,
   onApprove,
   onReject,
@@ -905,7 +937,7 @@ function PaymentDetailsDrawer({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-600">Use as acoes abaixo para concluir a analise deste pagamento.</p>
             <div className="flex flex-wrap gap-3">
-              <Button type="button" variant="success" onClick={onApprove} disabled={isApproved}>
+              <Button type="button" variant="success" onClick={onApprove} disabled={isApproved || processingPaymentId === payment.id}>
                 Aprovar
               </Button>
               <Button type="button" variant="danger" onClick={onReject} disabled={isRejected}>
