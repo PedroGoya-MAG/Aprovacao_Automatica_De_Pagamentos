@@ -1,18 +1,39 @@
-﻿import { paymentMockApi } from "@/mocks/payment-api";
+﻿import { mockPaymentBatches } from "@/mocks/payment-batches";
+import { paymentMockApi } from "@/mocks/payment-api";
 import { buildPaymentApiUrl, getPaymentApiHeaders, paymentApiConfig } from "@/services/api-config";
-import { type Lote } from "@/types/payments";
+import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
 
-export async function getLotes(): Promise<Lote[]> {
-  if (shouldUseMocks()) {
-    return paymentMockApi.getLotes();
+const DEFAULT_APPROVALS_BATCHES_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/lotes";
+
+type LotesFilters = {
+  benefitType?: "ALL" | BenefitType;
+  status?: "ALL" | PaymentStatus;
+};
+
+export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
+  const realtimeUrl = buildApprovalsBatchesUrl(filters);
+
+  try {
+    const response = await fetch(realtimeUrl, {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json"
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error("Nao foi possivel carregar os lotes reais.");
+    }
+
+    const data = (await response.json()) as Lote[];
+    return data.map(normalizeRealtimeBatch);
+  } catch {
+    if (shouldUseMocks()) {
+      return cloneBatches(mockPaymentBatches);
+    }
+
+    throw new Error("Nao foi possivel carregar os lotes de pagamentos.");
   }
-
-  const response = await fetch(buildPaymentApiUrl(), {
-    cache: "no-store",
-    headers: getPaymentApiHeaders()
-  });
-
-  return handleResponse<Lote[]>(response, "Nao foi possivel carregar os lotes de pagamentos.");
 }
 
 export async function getLoteById(loteId: string): Promise<Lote | null> {
@@ -80,6 +101,38 @@ export const paymentService = {
   listBatches: getLotes
 };
 
+function buildApprovalsBatchesUrl(filters: LotesFilters) {
+  const baseUrl =
+    process.env.APPROVALS_BATCHES_URL ??
+    process.env.NEXT_PUBLIC_APPROVALS_BATCHES_URL ??
+    DEFAULT_APPROVALS_BATCHES_URL;
+
+  const url = new URL(baseUrl);
+
+  if (filters.benefitType && filters.benefitType !== "ALL") {
+    url.searchParams.set("benefitType", filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate");
+  }
+
+  if (filters.status && filters.status !== "ALL") {
+    const statusMap: Record<PaymentStatus, string> = {
+      PENDING: "PENDENTE",
+      APPROVED: "APROVADO",
+      REJECTED: "REJEITADO"
+    };
+
+    url.searchParams.set("status", statusMap[filters.status]);
+  }
+
+  return url.toString();
+}
+
+function normalizeRealtimeBatch(batch: Lote): Lote {
+  return {
+    ...batch,
+    payments: batch.payments ?? []
+  };
+}
+
 function shouldUseMocks() {
   return paymentApiConfig.useMocks || !paymentApiConfig.baseUrl;
 }
@@ -90,4 +143,11 @@ async function handleResponse<T>(response: Response, fallbackMessage: string): P
   }
 
   return (await response.json()) as T;
+}
+
+function cloneBatches(batches: Lote[]) {
+  return batches.map((batch) => ({
+    ...batch,
+    payments: batch.payments?.map((payment) => ({ ...payment })) ?? []
+  }));
 }

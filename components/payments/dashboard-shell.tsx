@@ -26,6 +26,9 @@ import { StatusBadge } from "@/components/payments/status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ToastStack, type ToastItem } from "@/components/ui/toast-stack";
+import { getResumoDashboard } from "@/services/dashboard-service";
+import { getPagamentosByLote } from "@/services/lote-payments-service";
+import { getPagamentoById } from "@/services/payment-details-service";
 import { approvePaymentById } from "@/services/payment-approval-service";
 import {
   formatBenefitType,
@@ -34,7 +37,7 @@ import {
   formatDocument
 } from "@/lib/formatters";
 import { cn, normalizeText } from "@/lib/utils";
-import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus } from "@/types/payments";
+import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
 type DashboardShellProps = {
   initialBatches: PaymentBatch[];
@@ -48,6 +51,7 @@ type ActivePaymentState = {
 } | null;
 type VisibleBatch = PaymentBatch & {
   visiblePayments: Payment[];
+  hasPaymentDetails: boolean;
 };
 
 type SummaryTone = "blue" | "teal" | "slate";
@@ -66,12 +70,18 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
     Object.fromEntries(
       initialBatches.map((batch) => [
         batch.id,
-        batch.payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id)
+        (batch.payments ?? []).filter((payment) => payment.status === "PENDING").map((payment) => payment.id)
       ])
     )
   );
   const [activePayment, setActivePayment] = useState<ActivePaymentState>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [remoteSummary, setRemoteSummary] = useState<ResumoDashboard | null>(null);
+  const [hasLocalMutations, setHasLocalMutations] = useState(false);
+  const [loadingBatchPayments, setLoadingBatchPayments] = useState<Record<string, boolean>>({});
+  const [loadedBatchPayments, setLoadedBatchPayments] = useState<Record<string, boolean>>({});
+  const [paymentDetailsById, setPaymentDetailsById] = useState<Record<string, Payment>>({});
+  const [loadingPaymentDetails, setLoadingPaymentDetails] = useState(false);
   const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = normalizeText(deferredSearch);
@@ -86,35 +96,76 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
     }, 3400);
   }
 
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSummary() {
+      try {
+        const data = await getResumoDashboard();
+
+        if (isMounted) {
+          setRemoteSummary(data);
+        }
+      } catch {
+        if (isMounted) {
+          setRemoteSummary(null);
+        }
+      }
+    }
+
+    void loadSummary();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const visibleBatches = batches
     .filter((batch) => filterType === "ALL" || batch.benefitType === filterType)
     .map((batch) => {
+      const batchPayments = batch.payments ?? [];
       const batchMatchesSearch = matchesBatchSearch(batch, normalizedSearch);
+      const hasPaymentDetails = batchPayments.length > 0;
+      const matchesStatus = filterStatus === "ALL" || matchesLoteStatus(batch, filterStatus);
+      const visiblePayments = batchPayments.filter((payment) => {
+        const matchesPaymentStatus = filterStatus === "ALL" || payment.status === filterStatus;
+        const matchesPaymentText =
+          normalizedSearch.length === 0 || batchMatchesSearch || matchesPaymentSearch(payment, normalizedSearch);
+
+        return matchesPaymentStatus && matchesPaymentText;
+      });
+
+      const isVisible = hasPaymentDetails
+        ? normalizedSearch.length === 0
+          ? filterStatus === "ALL" || visiblePayments.length > 0
+          : batchMatchesSearch || visiblePayments.length > 0
+        : matchesStatus && (normalizedSearch.length === 0 || batchMatchesSearch);
 
       return {
         ...batch,
-        visiblePayments: batch.payments.filter((payment) => {
-          const matchesStatus = filterStatus === "ALL" || payment.status === filterStatus;
-          const matchesSearch =
-            normalizedSearch.length === 0 || batchMatchesSearch || matchesPaymentSearch(payment, normalizedSearch);
-
-          return matchesStatus && matchesSearch;
-        })
+        payments: batchPayments,
+        visiblePayments,
+        hasPaymentDetails,
+        isVisible
       };
     })
-    .filter((batch) => batch.visiblePayments.length > 0);
+    .filter((batch) => batch.isVisible)
+    .map(({ isVisible, ...batch }) => batch);
   const activeBatch = activePayment ? batches.find((batch) => batch.id === activePayment.batchId) : undefined;
   const currentPayment = activePayment
-    ? activeBatch?.payments.find((payment) => payment.id === activePayment.paymentId)
+    ? paymentDetailsById[activePayment.paymentId] ??
+      activeBatch?.payments?.find((payment) => payment.id === activePayment.paymentId)
     : undefined;
-
-  const pendingBatches = batches.filter((batch) => batch.payments.some((payment) => payment.status === "PENDING")).length;
-  const pendingPayments = batches.flatMap((batch) => batch.payments).filter((payment) => payment.status === "PENDING");
-  const pendingValue = pendingPayments.reduce((total, payment) => total + payment.grossAmount, 0);
-  const resgateBatches = batches.filter((batch) => batch.benefitType === "RESGATE").length;
-  const sorteioBatches = batches.filter((batch) => batch.benefitType === "SORTEIO").length;
+  const localSummary = buildDashboardSummary(batches);
+  const summary = hasLocalMutations ? localSummary : remoteSummary ?? localSummary;
 
   function toggleExpanded(batchId: string) {
+    const isOpening = !(expandedBatches[batchId] ?? false);
+
+    if (isOpening) {
+      void loadBatchPayments(batchId);
+    }
+
     setExpandedBatches((current) => ({
       ...current,
       [batchId]: !current[batchId]
@@ -142,9 +193,107 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
     }
   }
 
+  async function loadBatchPayments(batchId: string) {
+    if (loadingBatchPayments[batchId] || loadedBatchPayments[batchId]) {
+      return;
+    }
+
+    setLoadingBatchPayments((current) => ({
+      ...current,
+      [batchId]: true
+    }));
+
+    try {
+      const payments = await getPagamentosByLote(batchId);
+
+      setBatches((current) =>
+        current.map((batch) =>
+          batch.id !== batchId
+            ? batch
+            : {
+                ...batch,
+                payments
+              }
+        )
+      );
+
+      setSelectedByBatch((current) => ({
+        ...current,
+        [batchId]: payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id)
+      }));
+
+      setLoadedBatchPayments((current) => ({
+        ...current,
+        [batchId]: true
+      }));
+    } catch {
+      notify(
+        "Falha ao carregar pagamentos",
+        "Nao foi possivel buscar os pagamentos deste lote agora. Tente expandir novamente em instantes.",
+        "warning"
+      );
+    } finally {
+      setLoadingBatchPayments((current) => ({
+        ...current,
+        [batchId]: false
+      }));
+    }
+  }
+
+  async function handleShowDetails(batchId: string, paymentId: string) {
+    setActivePayment({ batchId, paymentId });
+
+    if (paymentDetailsById[paymentId]) {
+      return;
+    }
+
+    setLoadingPaymentDetails(true);
+
+    try {
+      const payment = await getPagamentoById(paymentId);
+
+      if (!payment) {
+        notify(
+          "Detalhes indisponiveis",
+          "Esse pagamento nao retornou detalhes adicionais no backend. Exibindo apenas os dados ja carregados na lista.",
+          "warning"
+        );
+        return;
+      }
+
+      setPaymentDetailsById((current) => ({
+        ...current,
+        [paymentId]: payment
+      }));
+
+      setBatches((current) =>
+        current.map((batch) =>
+          batch.id !== batchId
+            ? batch
+            : {
+                ...batch,
+                payments: (batch.payments ?? []).map((currentPayment) =>
+                  currentPayment.id === paymentId ? { ...currentPayment, ...payment } : currentPayment
+                )
+              }
+        )
+      );
+    } catch {
+      notify(
+        "Falha ao carregar detalhes",
+        "Nao foi possivel buscar os detalhes completos deste pagamento agora.",
+        "warning"
+      );
+    } finally {
+      setLoadingPaymentDetails(false);
+    }
+  }
+
   function updatePaymentStatus(batchId: string, paymentId: string, status: PaymentStatus) {
     const batch = batches.find((item) => item.id === batchId);
-    const payment = batch?.payments.find((item) => item.id === paymentId);
+    const payment = batch?.payments?.find((item) => item.id === paymentId);
+
+    setHasLocalMutations(true);
 
     setBatches((current) =>
       current.map((currentBatch) =>
@@ -152,7 +301,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
           ? currentBatch
           : {
               ...currentBatch,
-              payments: currentBatch.payments.map((currentPayment) =>
+              payments: (currentBatch.payments ?? []).map((currentPayment) =>
                 currentPayment.id === paymentId ? { ...currentPayment, status } : currentPayment
               )
             }
@@ -209,13 +358,15 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
       return;
     }
 
+    setHasLocalMutations(true);
+
     setBatches((current) =>
       current.map((currentBatch) =>
         currentBatch.id !== batchId
           ? currentBatch
           : {
               ...currentBatch,
-              payments: currentBatch.payments.map((payment) =>
+              payments: (currentBatch.payments ?? []).map((payment) =>
                 selected.has(payment.id) && payment.status === "PENDING"
                   ? { ...payment, status: "APPROVED" }
                   : payment
@@ -275,35 +426,35 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
         <SummaryCard
           icon={Layers3}
           label="Total de lotes pendentes"
-          value={pendingBatches.toString()}
+          value={summary.pendingBatchCount.toString()}
           helper="Lotes com ao menos um pagamento pendente"
           tone="blue"
         />
         <SummaryCard
           icon={CalendarClock}
           label="Total de pagamentos pendentes"
-          value={pendingPayments.length.toString()}
+          value={summary.pendingPaymentCount.toString()}
           helper="Itens aguardando aprovacao"
           tone="blue"
         />
         <SummaryCard
           icon={CircleDollarSign}
           label="Valor total pendente"
-          value={formatCurrency(pendingValue)}
+          value={formatCurrency(summary.pendingTotalAmount)}
           helper="Montante ainda nao liberado"
           tone="teal"
         />
         <SummaryCard
           icon={Wallet}
           label="Quantidade de lotes de Resgate"
-          value={resgateBatches.toString()}
+          value={summary.resgateBatchCount.toString()}
           helper="Carteira ativa de resgates"
           tone="slate"
         />
         <SummaryCard
           icon={Gift}
           label="Quantidade de lotes de Sorteio"
-          value={sorteioBatches.toString()}
+          value={summary.sorteioBatchCount.toString()}
           helper="Carteira ativa de sorteios"
           tone="slate"
         />
@@ -360,6 +511,8 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
               batch={batch}
               selectedIds={selectedByBatch[batch.id] ?? []}
               isExpanded={expandedBatches[batch.id] ?? false}
+              isLoadingPayments={loadingBatchPayments[batch.id] ?? false}
+              hasLoadedPayments={loadedBatchPayments[batch.id] ?? false}
               onApproveBatch={() => approveSelected(batch.id)}
               onApproveSelected={() => approveSelected(batch.id)}
               onExpandToggle={() => toggleExpanded(batch.id)}
@@ -368,7 +521,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
               onPaymentApprove={(paymentId) => void handleApprovePayment(batch.id, paymentId)}
               onPaymentReject={(paymentId) => updatePaymentStatus(batch.id, paymentId, "REJECTED")}
               onPaymentRestore={(paymentId) => updatePaymentStatus(batch.id, paymentId, "PENDING")}
-              onShowDetails={(paymentId) => setActivePayment({ batchId: batch.id, paymentId })}
+              onShowDetails={(paymentId) => void handleShowDetails(batch.id, paymentId)}
               processingPaymentId={processingPaymentId}
             />
           ))}
@@ -380,6 +533,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
       <PaymentDetailsDrawer
         batch={activeBatch}
         payment={currentPayment}
+        isLoading={loadingPaymentDetails}
         processingPaymentId={processingPaymentId}
         onClose={() => setActivePayment(null)}
         onApprove={() => {
@@ -458,6 +612,8 @@ type BatchCardProps = {
   batch: VisibleBatch;
   selectedIds: string[];
   isExpanded: boolean;
+  isLoadingPayments: boolean;
+  hasLoadedPayments: boolean;
   onApproveBatch: () => void;
   onApproveSelected: () => void;
   onExpandToggle: () => void;
@@ -474,6 +630,8 @@ function BatchCard({
   batch,
   selectedIds,
   isExpanded,
+  isLoadingPayments,
+  hasLoadedPayments,
   onApproveBatch,
   onApproveSelected,
   onExpandToggle,
@@ -485,20 +643,21 @@ function BatchCard({
   onShowDetails,
   processingPaymentId
 }: BatchCardProps) {
-  const totalValue = batch.payments.reduce((total, payment) => total + payment.grossAmount, 0);
-  const selectedCount = batch.payments.filter(
+  const batchPayments = batch.payments ?? [];
+  const totalValue = batch.totalAmount ?? batchPayments.reduce((total, payment) => total + payment.grossAmount, 0);
+  const paymentCount = batch.paymentCount ?? batchPayments.length;
+  const selectedCount = batchPayments.filter(
     (payment) => selectedIds.includes(payment.id) && payment.status === "PENDING"
   ).length;
-  const pendingCount = batch.payments.filter((payment) => payment.status === "PENDING").length;
-  const approvedCount = batch.payments.filter((payment) => payment.status === "APPROVED").length;
-  const rejectedCount = batch.payments.filter((payment) => payment.status === "REJECTED").length;
-  const batchStatus = getBatchStatus(pendingCount, approvedCount, rejectedCount);
+  const pendingCount = batch.pendingCount ?? batchPayments.filter((payment) => payment.status === "PENDING").length;
+  const approvedCount = batch.approvedCount ?? batchPayments.filter((payment) => payment.status === "APPROVED").length;
+  const rejectedCount = batch.rejectedCount ?? batchPayments.filter((payment) => payment.status === "REJECTED").length;
+  const batchStatus = getPresentationBatchStatus(batch, pendingCount, approvedCount, rejectedCount);
   const actionDisabled = selectedCount === 0;
   const typeAccent =
     batch.benefitType === "SORTEIO"
       ? "bg-[linear-gradient(90deg,#1663d6_0%,#4f9df7_100%)]"
       : "bg-[linear-gradient(90deg,#0f766e_0%,#1f9d8b_100%)]";
-  const typeLabel = batch.benefitType === "SORTEIO" ? "Lote de Sorteio" : "Lote de Resgate";
 
   return (
     <article className="panel relative overflow-hidden">
@@ -515,7 +674,7 @@ function BatchCard({
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Identificador do lote</p>
               <h3 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{batch.batchNumber}</h3>
               <p className="text-sm text-slate-600">
-                {formatBenefitType(batch.benefitType)} com {batch.payments.length} pagamento(s), programado para {formatDate(batch.scheduledAt)}.
+                {formatBenefitType(batch.benefitType)} com {paymentCount} pagamento(s), programado para {formatDate(batch.scheduledAt)}.
               </p>
             </div>
           </div>
@@ -532,7 +691,7 @@ function BatchCard({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${batch.payments.length}`} />
+          <MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${paymentCount}`} />
           <MetricPill icon={CircleDollarSign} label="Valor total do lote" value={formatCurrency(totalValue)} />
           <MetricPill icon={CalendarDays} label="Status do lote" value={statusLabel(batchStatus)} />
           <MetricPill icon={CircleCheckBig} label="Selecionados para aprovacao" value={`${selectedCount}`} />
@@ -547,24 +706,73 @@ function BatchCard({
         </div>
 
         {isExpanded ? (
-          <PaymentList
-            batchId={batch.id}
-            batchPayments={batch.payments}
-            payments={batch.visiblePayments}
-            totalPayments={batch.payments.length}
-            selectedIds={selectedIds}
-            onApproveSelected={onApproveSelected}
-            onToggleAllSelections={onToggleAllSelections}
-            onPaymentSelectionChange={onPaymentSelectionChange}
-            onPaymentApprove={onPaymentApprove}
-            onPaymentReject={onPaymentReject}
-            onPaymentRestore={onPaymentRestore}
-            onShowDetails={onShowDetails}
-            processingPaymentId={processingPaymentId}
-          />
+          isLoadingPayments ? (
+            <LoadingBatchPayments />
+          ) : batch.hasPaymentDetails ? (
+            <PaymentList
+              batchId={batch.id}
+              batchPayments={batchPayments}
+              payments={batch.visiblePayments}
+              totalPayments={paymentCount}
+              selectedIds={selectedIds}
+              onApproveSelected={onApproveSelected}
+              onToggleAllSelections={onToggleAllSelections}
+              onPaymentSelectionChange={onPaymentSelectionChange}
+              onPaymentApprove={onPaymentApprove}
+              onPaymentReject={onPaymentReject}
+              onPaymentRestore={onPaymentRestore}
+              onShowDetails={onShowDetails}
+              processingPaymentId={processingPaymentId}
+            />
+          ) : hasLoadedPayments ? (
+            <EmptyBatchPayments batchNumber={batch.batchNumber} />
+          ) : (
+            <UnavailablePaymentDetails />
+          )
         ) : null}
       </div>
     </article>
+  );
+}
+
+function UnavailablePaymentDetails() {
+  return (
+    <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600">
+      <p className="section-title">Detalhes do lote</p>
+      <p>Expanda o lote para carregar os pagamentos diretamente da API e preencher esta area em tempo real.</p>
+      <p className="rounded-2xl bg-slate-50 px-4 py-3 text-slate-500">
+        Assim que a requisicao finalizar, a tabela interna exibira os itens prontos para aprovacao, rejeicao ou consulta.
+      </p>
+    </div>
+  );
+}
+
+function LoadingBatchPayments() {
+  return (
+    <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600">
+      <p className="section-title">Carregando pagamentos</p>
+      <p>Buscando os itens deste lote no backend para montar a tabela detalhada.</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="h-20 animate-pulse rounded-3xl bg-slate-100" />
+        <div className="h-20 animate-pulse rounded-3xl bg-slate-100" />
+      </div>
+    </div>
+  );
+}
+
+type EmptyBatchPaymentsProps = {
+  batchNumber: string;
+};
+
+function EmptyBatchPayments({ batchNumber }: EmptyBatchPaymentsProps) {
+  return (
+    <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600">
+      <p className="section-title">Nenhum pagamento retornado</p>
+      <p>O lote {batchNumber} foi encontrado, mas a API nao retornou pagamentos para esta consulta.</p>
+      <p className="rounded-2xl bg-slate-50 px-4 py-3 text-slate-500">
+        Se isso nao era esperado, vale revisar o fluxo no n8n ou validar se o lote realmente possui itens vinculados.
+      </p>
+    </div>
   );
 }
 
@@ -811,6 +1019,7 @@ function PaymentList({
 type PaymentDetailsDrawerProps = {
   batch?: PaymentBatch;
   payment?: Payment;
+  isLoading: boolean;
   processingPaymentId: string | null;
   onClose: () => void;
   onApprove: () => void;
@@ -818,16 +1027,10 @@ type PaymentDetailsDrawerProps = {
   onRestore: () => void;
 };
 
-type PaymentHistoryItem = {
-  title: string;
-  description: string;
-  timestamp: string;
-  tone: "blue" | "teal" | "slate" | "rose";
-};
-
 function PaymentDetailsDrawer({
   batch,
   payment,
+  isLoading,
   processingPaymentId,
   onClose,
   onApprove,
@@ -853,8 +1056,7 @@ function PaymentDetailsDrawer({
     return null;
   }
 
-  const observation = getPaymentObservation(payment, batch);
-  const history = getPaymentHistory(payment, batch);
+  const observation = payment.observations ?? getPaymentObservation(payment, batch);
   const isApproved = payment.status === "APPROVED";
   const isRejected = payment.status === "REJECTED";
 
@@ -870,7 +1072,7 @@ function PaymentDetailsDrawer({
               <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{payment.beneficiaryName}</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={payment.status} />
-                <BenefitBadge benefitType={batch.benefitType} />
+                <BenefitBadge benefitType={payment.benefitType ?? batch.benefitType} />
                 <span className="data-chip">Lote {batch.batchNumber}</span>
                 <span className="data-chip">Pagamento {payment.id}</span>
               </div>
@@ -887,11 +1089,11 @@ function PaymentDetailsDrawer({
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Resumo executivo</p>
                 <p className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{formatCurrency(payment.grossAmount)}</p>
                 <p className="mt-1 text-sm text-slate-600">
-                  Pagamento previsto para {formatDate(payment.paymentDate)} no lote {batch.batchNumber}.
+                  Pagamento previsto para {formatDate(payment.paymentDate)} no lote {payment.loteId ?? batch.batchNumber}.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <QuickInfo label="ID do lote" value={batch.id} />
+                <QuickInfo label="ID do lote" value={payment.loteId ?? batch.id} />
                 <QuickInfo label="ID do pagamento" value={payment.id} />
               </div>
             </div>
@@ -904,31 +1106,19 @@ function PaymentDetailsDrawer({
             <DetailBlock icon={FileBadge2} label="Documento do beneficiario" value={formatDocument(payment.document)} />
             <DetailBlock icon={CircleDollarSign} label="Valor bruto do pagamento" value={formatCurrency(payment.grossAmount)} />
             <DetailBlock icon={CalendarDays} label="Data para pagamento" value={formatDate(payment.paymentDate)} />
-            <DetailBlock icon={Gift} label="Tipo do beneficio" value={formatBenefitType(batch.benefitType)} />
+            <DetailBlock icon={Gift} label="Tipo do beneficio" value={formatBenefitType(payment.benefitType ?? batch.benefitType)} />
             <DetailBlock icon={Layers3} label="Status atual" value={statusLabel(payment.status)} />
             <DetailBlock icon={Layers3} label="ID do pagamento" value={payment.id} />
-            <DetailBlock icon={Layers3} label="ID do lote" value={batch.id} />
+            <DetailBlock icon={Layers3} label="ID do lote" value={payment.loteId ?? batch.id} />
           </div>
 
           <DrawerSection
             icon={ShieldCheck}
             title="Observacoes"
-            description="Contexto mockado para apoiar a revisao antes da decisao."
+            description="Contexto de apoio para a revisao antes da decisao."
           >
             <div className="rounded-3xl bg-slate-50 px-4 py-4 text-sm leading-6 text-slate-700">
-              {observation}
-            </div>
-          </DrawerSection>
-
-          <DrawerSection
-            icon={CalendarClock}
-            title="Historico da acao"
-            description="Linha do tempo mockada para demonstrar futura integracao com trilha de auditoria."
-          >
-            <div className="space-y-4">
-              {history.map((item, index) => (
-                <HistoryItem key={`${item.title}-${index}`} item={item} isLast={index === history.length - 1} />
-              ))}
+              {isLoading ? "Atualizando detalhes do pagamento com os dados mais recentes do backend..." : observation}
             </div>
           </DrawerSection>
         </div>
@@ -1021,36 +1211,6 @@ function DetailBlock({ icon: Icon, label, value }: DetailBlockProps) {
   );
 }
 
-type HistoryItemProps = {
-  item: PaymentHistoryItem;
-  isLast: boolean;
-};
-
-function HistoryItem({ item, isLast }: HistoryItemProps) {
-  const toneMap: Record<PaymentHistoryItem["tone"], string> = {
-    blue: "bg-sky-500",
-    teal: "bg-teal-500",
-    slate: "bg-slate-400",
-    rose: "bg-rose-500"
-  };
-
-  return (
-    <div className="flex gap-4">
-      <div className="flex flex-col items-center">
-        <span className={cn("mt-1 h-3.5 w-3.5 rounded-full", toneMap[item.tone])} />
-        {!isLast ? <span className="mt-2 h-full w-px bg-slate-200" /> : null}
-      </div>
-      <div className="flex-1 rounded-2xl bg-slate-50 px-4 py-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-          <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-500">{item.timestamp}</span>
-        </div>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{item.description}</p>
-      </div>
-    </div>
-  );
-}
-
 function getPaymentObservation(payment: Payment, batch: PaymentBatch) {
   const benefitLabel = formatBenefitType(batch.benefitType).toLowerCase();
 
@@ -1065,56 +1225,69 @@ function getPaymentObservation(payment: Payment, batch: PaymentBatch) {
   return `Pagamento aguardando decisao da gestora Cris. O mock considera conferencias de documento, valor bruto e enquadramento do beneficio antes da aprovacao final.`;
 }
 
-function getPaymentHistory(payment: Payment, batch: PaymentBatch): PaymentHistoryItem[] {
-  const baseHistory: PaymentHistoryItem[] = [
-    {
-      title: "Criado",
-      description: `Pagamento ${payment.id} gerado para a competencia ${batch.competence} e vinculado ao lote ${batch.batchNumber}.`,
-      timestamp: formatDate(batch.scheduledAt),
-      tone: "slate"
-    },
-    {
-      title: "Enviado para aprovacao",
-      description: `Item disponibilizado na fila de aprovacao da gestora Cris com o valor bruto de ${formatCurrency(payment.grossAmount)}.`,
-      timestamp: formatDate(batch.scheduledAt),
-      tone: "blue"
-    }
-  ];
-
-  if (payment.status === "APPROVED") {
-    return [
-      ...baseHistory,
-      {
-        title: "Aprovado",
-        description: "Pagamento confirmado para processamento financeiro e mantido no lote atual.",
-        timestamp: formatDate(payment.paymentDate),
-        tone: "teal"
+function buildDashboardSummary(batches: PaymentBatch[]): ResumoDashboard {
+  return {
+    pendingBatchCount: batches.filter((batch) => getBatchPendingCount(batch) > 0).length,
+    pendingPaymentCount: batches.reduce((total, batch) => total + getBatchPendingCount(batch), 0),
+    pendingTotalAmount: batches.reduce((total, batch) => {
+      if ((batch.payments ?? []).length > 0) {
+        return total + (batch.payments ?? [])
+          .filter((payment) => payment.status === "PENDING")
+          .reduce((subtotal, payment) => subtotal + payment.grossAmount, 0);
       }
-    ];
-  }
 
-  if (payment.status === "REJECTED") {
-    return [
-      ...baseHistory,
-      {
-        title: "Rejeitado",
-        description: "Pagamento sinalizado para revisao e removido da aprovacao em lote ate novo tratamento.",
-        timestamp: formatDate(payment.paymentDate),
-        tone: "rose"
-      }
-    ];
-  }
-
-  return [
-    ...baseHistory,
-    {
-      title: "Aguardando decisao",
-      description: "Pagamento permanece pendente de aprovacao individual ou aprovacao em lote.",
-      timestamp: formatDate(payment.paymentDate),
-      tone: "teal"
-    }
-  ];
+      return total + (getBatchPendingCount(batch) > 0 ? batch.totalAmount ?? 0 : 0);
+    }, 0),
+    resgateBatchCount: batches.filter((batch) => batch.benefitType === "RESGATE").length,
+    sorteioBatchCount: batches.filter((batch) => batch.benefitType === "SORTEIO").length
+  };
 }
+
+function getBatchPendingCount(batch: PaymentBatch) {
+  return batch.pendingCount ?? (batch.payments ?? []).filter((payment) => payment.status === "PENDING").length;
+}
+
+function getBatchApprovedCount(batch: PaymentBatch) {
+  return batch.approvedCount ?? (batch.payments ?? []).filter((payment) => payment.status === "APPROVED").length;
+}
+
+function getBatchRejectedCount(batch: PaymentBatch) {
+  return batch.rejectedCount ?? (batch.payments ?? []).filter((payment) => payment.status === "REJECTED").length;
+}
+
+function matchesLoteStatus(batch: PaymentBatch, status: PaymentStatus) {
+  if ((batch.payments ?? []).length > 0) {
+    return (batch.payments ?? []).some((payment) => payment.status === status);
+  }
+
+  if (!batch.status) {
+    return status === "PENDING";
+  }
+
+  if (batch.status === "PARTIALLY_APPROVED") {
+    return status === "PENDING";
+  }
+
+  return batch.status === status;
+}
+
+function getPresentationBatchStatus(
+  batch: PaymentBatch,
+  pendingCount: number,
+  approvedCount: number,
+  rejectedCount: number
+): PaymentStatus {
+  if (batch.status === "APPROVED") {
+    return "APPROVED";
+  }
+
+  if (batch.status === "REJECTED") {
+    return "REJECTED";
+  }
+
+  return getBatchStatus(pendingCount, approvedCount, rejectedCount);
+}
+
 function matchesBatchSearch(batch: PaymentBatch, search: string) {
   if (!search.trim()) {
     return false;
@@ -1138,6 +1311,7 @@ function matchesPaymentSearch(payment: Payment, search: string) {
     normalizeText(payment.document).includes(normalizedSearch)
   );
 }
+
 function getBatchStatus(pendingCount: number, approvedCount: number, rejectedCount: number): PaymentStatus {
   if (pendingCount > 0) {
     return "PENDING";
@@ -1149,7 +1323,6 @@ function getBatchStatus(pendingCount: number, approvedCount: number, rejectedCou
 
   return "REJECTED";
 }
-
 function statusLabel(status: PaymentStatus) {
   if (status === "APPROVED") {
     return "Aprovado";
@@ -1161,24 +1334,3 @@ function statusLabel(status: PaymentStatus) {
 
   return "Pendente";
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

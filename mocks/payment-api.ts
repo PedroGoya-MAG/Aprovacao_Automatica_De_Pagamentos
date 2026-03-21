@@ -1,4 +1,4 @@
-﻿import { mockPaymentBatches } from "@/mocks/payment-batches";
+import { mockPaymentBatches } from "@/mocks/payment-batches";
 import { type Lote } from "@/types/payments";
 
 let mockDatabase = cloneLotes(mockPaymentBatches);
@@ -19,7 +19,7 @@ export const paymentMockApi = {
     await simulateDelay();
     const lote = getExistingLote(loteId);
 
-    lote.payments = lote.payments.map((payment) =>
+    lote.payments = (lote.payments ?? []).map((payment) =>
       payment.status === "PENDING" ? { ...payment, status: "APPROVED" } : payment
     );
 
@@ -30,7 +30,7 @@ export const paymentMockApi = {
     await simulateDelay();
     const lote = getExistingLote(loteId);
 
-    lote.payments = lote.payments.map((payment) =>
+    lote.payments = (lote.payments ?? []).map((payment) =>
       payment.id === pagamentoId ? { ...payment, status: "APPROVED" } : payment
     );
 
@@ -41,7 +41,7 @@ export const paymentMockApi = {
     await simulateDelay();
     const lote = getExistingLote(loteId);
 
-    lote.payments = lote.payments.map((payment) =>
+    lote.payments = (lote.payments ?? []).map((payment) =>
       payment.id === pagamentoId ? { ...payment, status: "REJECTED" } : payment
     );
 
@@ -72,7 +72,7 @@ function simulateDelay(duration = 180) {
 function cloneLote(lote: Lote): Lote {
   return {
     ...lote,
-    payments: lote.payments.map((payment) => ({ ...payment }))
+    payments: (lote.payments ?? []).map((payment) => ({ ...payment }))
   };
 }
 

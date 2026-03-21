@@ -1,6 +1,8 @@
-﻿import { AppHeader } from "@/components/layout/app-header";
+import { AppHeader } from "@/components/layout/app-header";
 import { DashboardShell } from "@/components/payments/dashboard-shell";
 import { getLotes } from "@/services/payment-service";
+
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const batches = await getLotes();
