@@ -5,6 +5,7 @@ import { BenefitBadge } from "@/components/payments/benefit-badge";
 
 export function AppHeader() {
   const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovacao de Pagamentos";
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 
   return (
@@ -20,6 +21,7 @@ export function AppHeader() {
             </div>
             <span className="data-chip">Uso interno da gestora Cris</span>
             <span className="data-chip">Fluxo financeiro controlado</span>
+            {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
           </div>
 
           <div className="max-w-3xl space-y-4">
@@ -76,6 +78,7 @@ function InfoLine({ icon: Icon, label, value }: InfoLineProps) {
     </div>
   );
 }
+
 
 
 

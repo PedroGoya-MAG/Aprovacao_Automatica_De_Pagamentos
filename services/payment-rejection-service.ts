@@ -1,9 +1,16 @@
+import { getDemoRejectPaymentResult } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
+
 export type RejectPaymentResult = {
   id: string;
   status: "REJECTED";
 };
 
 export async function rejectPaymentById(pagamentoId: string | number): Promise<RejectPaymentResult> {
+  if (isDemoMode()) {
+    return getDemoRejectPaymentResult(pagamentoId);
+  }
+
   const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}/rejeitar`, {
     method: "POST",
     cache: "no-store"

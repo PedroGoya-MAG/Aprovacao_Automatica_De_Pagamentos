@@ -1,3 +1,5 @@
+import { getDemoLotes } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
 
 const DEFAULT_APPROVALS_BATCHES_URL = "https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes";
@@ -8,6 +10,10 @@ type LotesFilters = {
 };
 
 export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
+  if (isDemoMode()) {
+    return getDemoLotes(filters);
+  }
+
   const response = await fetch(buildApprovalsBatchesUrl(filters), {
     cache: "no-store",
     headers: {
