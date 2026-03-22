@@ -1,3 +1,6 @@
+import { getDemoApproveSelectedResult } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
+
 export type ApproveSelectedPaymentsResult = {
   loteId: string;
   approvedPaymentIds: string[];
@@ -8,6 +11,10 @@ export async function approveSelectedPayments(
   loteId: string,
   paymentIds: string[]
 ): Promise<ApproveSelectedPaymentsResult> {
+  if (isDemoMode()) {
+    return getDemoApproveSelectedResult(loteId, paymentIds);
+  }
+
   const response = await fetch(`/api/aprovacoes/lotes/${loteId}/aprovar-selecionados`, {
     method: "POST",
     cache: "no-store",

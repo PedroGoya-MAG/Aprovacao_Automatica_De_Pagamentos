@@ -1,9 +1,16 @@
+import { getDemoApprovePaymentResult } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
+
 export type ApprovePaymentResult = {
   id: string;
   status: "APPROVED";
 };
 
 export async function approvePaymentById(pagamentoId: string | number): Promise<ApprovePaymentResult> {
+  if (isDemoMode()) {
+    return getDemoApprovePaymentResult(pagamentoId);
+  }
+
   const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}/aprovar`, {
     method: "POST",
     cache: "no-store"

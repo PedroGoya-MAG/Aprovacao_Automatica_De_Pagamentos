@@ -1,3 +1,6 @@
+import { getDemoApproveBatchResult } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
+
 export type ApproveBatchResult = {
   loteId: string;
   status: "APPROVED";
@@ -5,6 +8,10 @@ export type ApproveBatchResult = {
 };
 
 export async function approveBatch(loteId: string): Promise<ApproveBatchResult> {
+  if (isDemoMode()) {
+    return getDemoApproveBatchResult(loteId);
+  }
+
   const response = await fetch(`/api/aprovacoes/lotes/${loteId}/aprovar`, {
     method: "POST",
     cache: "no-store"

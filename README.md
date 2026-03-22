@@ -1,6 +1,6 @@
 # Portal de Aprovacao de Pagamentos
 
-Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido com Next.js App Router, TypeScript e Tailwind CSS. O projeto esta preparado para deploy na Vercel e integrado com os endpoints reais do backend via rotas proxy do Next.js.
+Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido com Next.js App Router, TypeScript e Tailwind CSS. O projeto esta preparado para deploy na Vercel, com suporte a modo demonstracao para apresentacoes fora da VPN, e integrado com os endpoints reais do backend via rotas proxy do Next.js.
 
 ## Stack
 
@@ -112,7 +112,7 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 
 ## Variaveis de ambiente
 
-- `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.
+- `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.`r`n- `NEXT_PUBLIC_DEMO_MODE`: quando `true`, usa dados locais de demonstracao e nao depende da VPN.
 - `NEXT_PUBLIC_APP_ENV`: ambiente exibido ou utilizado pelo projeto, se necessario.
 - `NEXT_PUBLIC_APPROVALS_SUMMARY_URL`: endpoint publico do resumo.
 - `APPROVALS_SUMMARY_URL`: endpoint server-side do resumo.
@@ -165,3 +165,4 @@ vercel --prod
 - Proxies server-side para os endpoints do backend.
 - Variaveis de ambiente compativeis com o modelo da Vercel.
 - Estrutura pronta para SSR dinamico e integracao incremental com backend.
+

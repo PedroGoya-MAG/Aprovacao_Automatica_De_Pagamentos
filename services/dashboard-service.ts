@@ -1,3 +1,5 @@
+import { getDemoResumoDashboard } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
 type DashboardSummaryFilters = {
@@ -9,6 +11,10 @@ type DashboardSummaryFilters = {
 const DEFAULT_APPROVALS_SUMMARY_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo";
 
 export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) {
+  if (isDemoMode()) {
+    return getDemoResumoDashboard(filters);
+  }
+
   const query = buildSummaryQuery(filters);
   const response = await fetch(`/api/aprovacoes/resumo${query}`, {
     method: "GET",
@@ -23,6 +29,10 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
 }
 
 export async function getResumoDashboardServer(filters: DashboardSummaryFilters = {}) {
+  if (isDemoMode()) {
+    return getDemoResumoDashboard(filters);
+  }
+
   const upstreamUrl =
     process.env.APPROVALS_SUMMARY_URL ??
     process.env.NEXT_PUBLIC_APPROVALS_SUMMARY_URL ??
