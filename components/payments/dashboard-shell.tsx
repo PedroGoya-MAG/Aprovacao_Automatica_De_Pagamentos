@@ -30,6 +30,9 @@ import { getResumoDashboard } from "@/services/dashboard-service";
 import { getPagamentosByLote } from "@/services/lote-payments-service";
 import { getPagamentoById } from "@/services/payment-details-service";
 import { approvePaymentById } from "@/services/payment-approval-service";
+import { rejectPaymentById } from "@/services/payment-rejection-service";
+import { approveSelectedPayments } from "@/services/batch-selected-approval-service";
+import { approveBatch } from "@/services/batch-approval-service";
 import {
   formatBenefitType,
   formatCurrency,
@@ -41,6 +44,7 @@ import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus, 
 
 type DashboardShellProps = {
   initialBatches: PaymentBatch[];
+  initialSummary: ResumoDashboard | null;
 };
 
 type BenefitFilterOption = "ALL" | BenefitType;
@@ -58,7 +62,7 @@ type SummaryTone = "blue" | "teal" | "slate";
 
 let toastCounter = 0;
 
-export function DashboardShell({ initialBatches }: DashboardShellProps) {
+export function DashboardShell({ initialBatches, initialSummary }: DashboardShellProps) {
   const [batches, setBatches] = useState(initialBatches);
   const [filterType, setFilterType] = useState<BenefitFilterOption>("ALL");
   const [filterStatus, setFilterStatus] = useState<StatusFilterOption>("ALL");
@@ -76,13 +80,14 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
   );
   const [activePayment, setActivePayment] = useState<ActivePaymentState>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [remoteSummary, setRemoteSummary] = useState<ResumoDashboard | null>(null);
+  const [remoteSummary, setRemoteSummary] = useState<ResumoDashboard | null>(initialSummary);
   const [hasLocalMutations, setHasLocalMutations] = useState(false);
   const [loadingBatchPayments, setLoadingBatchPayments] = useState<Record<string, boolean>>({});
   const [loadedBatchPayments, setLoadedBatchPayments] = useState<Record<string, boolean>>({});
   const [paymentDetailsById, setPaymentDetailsById] = useState<Record<string, Payment>>({});
   const [loadingPaymentDetails, setLoadingPaymentDetails] = useState(false);
   const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
+  const [processingBatchId, setProcessingBatchId] = useState<string | null>(null);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = normalizeText(deferredSearch);
 
@@ -107,7 +112,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
           setRemoteSummary(data);
         }
       } catch {
-        if (isMounted) {
+        if (isMounted && !initialSummary) {
           setRemoteSummary(null);
         }
       }
@@ -118,7 +123,13 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [initialSummary]);
+
+  useEffect(() => {
+    initialBatches.forEach((batch) => {
+      void loadBatchPayments(batch.id);
+    });
+  }, [initialBatches]);
 
   const visibleBatches = batches
     .filter((batch) => filterType === "ALL" || batch.benefitType === filterType)
@@ -190,6 +201,128 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
       );
     } finally {
       setProcessingPaymentId(null);
+    }
+  }
+
+  async function handleRejectPayment(batchId: string, paymentId: string) {
+    if (processingPaymentId === paymentId) {
+      return;
+    }
+
+    setProcessingPaymentId(paymentId);
+
+    try {
+      const result = await rejectPaymentById(paymentId);
+      updatePaymentStatus(batchId, String(result.id), result.status);
+    } catch {
+      notify(
+        "Falha ao rejeitar pagamento",
+        "Nao foi possivel concluir a rejeicao deste pagamento agora.",
+        "warning"
+      );
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  }
+
+  async function handleApproveBatch(batchId: string) {
+    if (processingBatchId === batchId) {
+      return;
+    }
+
+    setProcessingBatchId(batchId);
+
+    try {
+      const result = await approveBatch(batchId);
+      applyApprovedPayments(batchId, result.approvedPaymentIds, "batch");
+    } catch {
+      notify(
+        "Falha ao aprovar lote",
+        "Nao foi possivel concluir a aprovacao completa deste lote agora.",
+        "warning"
+      );
+    } finally {
+      setProcessingBatchId(null);
+    }
+  }
+
+  async function handleApproveSelected(batchId: string) {
+    const paymentIds = Array.from(new Set(selectedByBatch[batchId] ?? []));
+
+    if (paymentIds.length === 0 || processingBatchId === batchId) {
+      return;
+    }
+
+    setProcessingBatchId(batchId);
+
+    try {
+      const result = await approveSelectedPayments(batchId, paymentIds);
+      applyApprovedPayments(batchId, result.approvedPaymentIds, "selected");
+    } catch {
+      notify(
+        "Falha ao aprovar selecionados",
+        "Nao foi possivel concluir a aprovacao dos pagamentos selecionados agora.",
+        "warning"
+      );
+    } finally {
+      setProcessingBatchId(null);
+    }
+  }
+
+  function applyApprovedPayments(batchId: string, approvedPaymentIds: string[], mode: "selected" | "batch") {
+    const approvedSet = new Set(approvedPaymentIds);
+    const batch = batches.find((item) => item.id === batchId);
+
+    setHasLocalMutations(true);
+
+    setBatches((current) =>
+      current.map((currentBatch) => {
+        if (currentBatch.id !== batchId) {
+          return currentBatch;
+        }
+
+        const nextPayments = (currentBatch.payments ?? []).map((payment) =>
+          approvedSet.has(payment.id) && payment.status === "PENDING"
+            ? { ...payment, status: "APPROVED" as const }
+            : payment
+        );
+        const pendingCount = nextPayments.filter((payment) => payment.status === "PENDING").length;
+        const approvedCount = nextPayments.filter((payment) => payment.status === "APPROVED").length;
+        const rejectedCount = nextPayments.filter((payment) => payment.status === "REJECTED").length;
+
+        return {
+          ...currentBatch,
+          payments: nextPayments,
+          paymentCount: nextPayments.length,
+          pendingCount,
+          approvedCount,
+          rejectedCount
+        };
+      })
+    );
+
+    setPaymentDetailsById((current) => {
+      const nextEntries = Object.entries(current).map(([paymentId, detail]) => [
+        paymentId,
+        approvedSet.has(paymentId) ? { ...detail, status: "APPROVED" as const } : detail
+      ]);
+
+      return Object.fromEntries(nextEntries);
+    });
+
+    setSelectedByBatch((current) => ({
+      ...current,
+      [batchId]: (current[batchId] ?? []).filter((paymentId) => !approvedSet.has(paymentId))
+    }));
+
+    if (batch) {
+      notify(
+        mode === "batch" ? "Lote aprovado" : "Selecionados aprovados",
+        mode === "batch"
+          ? `Todos os pagamentos elegiveis do lote ${batch.batchNumber} foram aprovados com sucesso.`
+          : `${approvedPaymentIds.length} pagamento(s) do lote ${batch.batchNumber} foram aprovados com sucesso.`,
+        "success"
+      );
     }
   }
 
@@ -307,6 +440,22 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
             }
       )
     );
+
+    setPaymentDetailsById((current) => {
+      const detail = current[paymentId];
+
+      if (!detail) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [paymentId]: {
+          ...detail,
+          status
+        }
+      };
+    });
 
     setSelectedByBatch((current) => {
       const currentSelection = current[batchId] ?? [];
@@ -513,16 +662,17 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
               isExpanded={expandedBatches[batch.id] ?? false}
               isLoadingPayments={loadingBatchPayments[batch.id] ?? false}
               hasLoadedPayments={loadedBatchPayments[batch.id] ?? false}
-              onApproveBatch={() => approveSelected(batch.id)}
-              onApproveSelected={() => approveSelected(batch.id)}
+              onApproveBatch={() => void handleApproveBatch(batch.id)}
+              onApproveSelected={() => void handleApproveSelected(batch.id)}
               onExpandToggle={() => toggleExpanded(batch.id)}
               onToggleAllSelections={toggleAllSelections}
               onPaymentSelectionChange={toggleSelection}
               onPaymentApprove={(paymentId) => void handleApprovePayment(batch.id, paymentId)}
-              onPaymentReject={(paymentId) => updatePaymentStatus(batch.id, paymentId, "REJECTED")}
+              onPaymentReject={(paymentId) => void handleRejectPayment(batch.id, paymentId)}
               onPaymentRestore={(paymentId) => updatePaymentStatus(batch.id, paymentId, "PENDING")}
               onShowDetails={(paymentId) => void handleShowDetails(batch.id, paymentId)}
               processingPaymentId={processingPaymentId}
+              processingBatchId={processingBatchId}
             />
           ))}
         </div>
@@ -548,7 +698,7 @@ export function DashboardShell({ initialBatches }: DashboardShellProps) {
             return;
           }
 
-          updatePaymentStatus(activePayment.batchId, activePayment.paymentId, "REJECTED");
+          void handleRejectPayment(activePayment.batchId, activePayment.paymentId);
         }}
         onRestore={() => {
           if (!activePayment) {
@@ -624,6 +774,7 @@ type BatchCardProps = {
   onPaymentRestore: (paymentId: string) => void;
   onShowDetails: (paymentId: string) => void;
   processingPaymentId: string | null;
+  processingBatchId: string | null;
 };
 
 function BatchCard({
@@ -641,7 +792,8 @@ function BatchCard({
   onPaymentReject,
   onPaymentRestore,
   onShowDetails,
-  processingPaymentId
+  processingPaymentId,
+  processingBatchId
 }: BatchCardProps) {
   const batchPayments = batch.payments ?? [];
   const totalValue = batch.totalAmount ?? batchPayments.reduce((total, payment) => total + payment.grossAmount, 0);
@@ -653,7 +805,9 @@ function BatchCard({
   const approvedCount = batch.approvedCount ?? batchPayments.filter((payment) => payment.status === "APPROVED").length;
   const rejectedCount = batch.rejectedCount ?? batchPayments.filter((payment) => payment.status === "REJECTED").length;
   const batchStatus = getPresentationBatchStatus(batch, pendingCount, approvedCount, rejectedCount);
-  const actionDisabled = selectedCount === 0;
+  const hasResolvedPayments = hasLoadedPayments || batch.hasPaymentDetails;
+  const actionDisabled =
+    pendingCount === 0 || processingBatchId === batch.id || (hasResolvedPayments && pendingCount !== selectedCount);
   const typeAccent =
     batch.benefitType === "SORTEIO"
       ? "bg-[linear-gradient(90deg,#1663d6_0%,#4f9df7_100%)]"
@@ -723,6 +877,7 @@ function BatchCard({
               onPaymentRestore={onPaymentRestore}
               onShowDetails={onShowDetails}
               processingPaymentId={processingPaymentId}
+              isProcessingBatch={processingBatchId === batch.id}
             />
           ) : hasLoadedPayments ? (
             <EmptyBatchPayments batchNumber={batch.batchNumber} />
@@ -810,6 +965,7 @@ type PaymentListProps = {
   onPaymentRestore: (paymentId: string) => void;
   onShowDetails: (paymentId: string) => void;
   processingPaymentId: string | null;
+  isProcessingBatch: boolean;
 };
 
 function PaymentList({
@@ -825,7 +981,8 @@ function PaymentList({
   onPaymentReject,
   onPaymentRestore,
   onShowDetails,
-  processingPaymentId
+  processingPaymentId,
+  isProcessingBatch
 }: PaymentListProps) {
   const pendingPayments = batchPayments.filter((payment) => payment.status === "PENDING");
   const visiblePendingIds = payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id);
@@ -853,7 +1010,7 @@ function PaymentList({
         <div className="flex flex-wrap items-center gap-3">
           <span className="data-chip">{selectedInBatch} no lote</span>
           <span className="data-chip">{excludedCount} fora do lote</span>
-          <Button type="button" variant="success" disabled={selectedPending === 0} onClick={onApproveSelected}>
+          <Button type="button" variant="success" disabled={selectedPending === 0 || isProcessingBatch} onClick={onApproveSelected}>
             Aprovar selecionados
           </Button>
         </div>
@@ -988,7 +1145,7 @@ function PaymentList({
                           <Button type="button" variant="success" size="sm" disabled={processingPaymentId === payment.id} onClick={() => onPaymentApprove(payment.id)}>
                             Aprovar
                           </Button>
-                          <Button type="button" variant="danger" size="sm" onClick={() => onPaymentReject(payment.id)}>
+                          <Button type="button" variant="danger" size="sm" disabled={processingPaymentId === payment.id} onClick={() => onPaymentReject(payment.id)}>
                             <XCircle className="h-4 w-4" />
                             Rejeitar
                           </Button>
@@ -1130,7 +1287,7 @@ function PaymentDetailsDrawer({
               <Button type="button" variant="success" onClick={onApprove} disabled={isApproved || processingPaymentId === payment.id}>
                 Aprovar
               </Button>
-              <Button type="button" variant="danger" onClick={onReject} disabled={isRejected}>
+              <Button type="button" variant="danger" onClick={onReject} disabled={isRejected || processingPaymentId === payment.id}>
                 Rejeitar
               </Button>
               {isRejected ? (
@@ -1334,3 +1491,12 @@ function statusLabel(status: PaymentStatus) {
 
   return "Pendente";
 }
+
+
+
+
+
+
+
+
+

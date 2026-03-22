@@ -1,15 +1,11 @@
-﻿import type { ComponentType } from "react";
+import type { ComponentType } from "react";
 import { CalendarDays, Landmark, ShieldCheck, TrendingUp } from "lucide-react";
 
 import { BenefitBadge } from "@/components/payments/benefit-badge";
 
 export function AppHeader() {
   const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovacao de Pagamentos";
-  const today = new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric"
-  }).format(new Date());
+
 
   return (
     <header className="panel relative overflow-hidden px-6 py-7 sm:px-8 sm:py-8">
@@ -50,7 +46,7 @@ export function AppHeader() {
               </span>
             </div>
             <div className="grid gap-3">
-              <InfoLine icon={CalendarDays} label="Atualizado em" value={today} />
+              <InfoLine icon={CalendarDays} label="Atualizacao" value="Dados sincronizados em tempo real" />
               <InfoLine icon={ShieldCheck} label="Objetivo" value="Aprovar lotes e pagamentos com seguranca" />
               <InfoLine icon={TrendingUp} label="Diretriz" value="Clareza operacional e resposta rapida" />
             </div>
@@ -80,4 +76,6 @@ function InfoLine({ icon: Icon, label, value }: InfoLineProps) {
     </div>
   );
 }
+
+
 
