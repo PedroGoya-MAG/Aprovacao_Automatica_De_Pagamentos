@@ -6,7 +6,50 @@ type DashboardSummaryFilters = {
   search?: string;
 };
 
+const DEFAULT_APPROVALS_SUMMARY_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo";
+
 export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) {
+  const query = buildSummaryQuery(filters);
+  const response = await fetch(`/api/aprovacoes/resumo${query}`, {
+    method: "GET",
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error("Nao foi possivel carregar o resumo da dashboard.");
+  }
+
+  return (await response.json()) as ResumoDashboard;
+}
+
+export async function getResumoDashboardServer(filters: DashboardSummaryFilters = {}) {
+  const upstreamUrl =
+    process.env.APPROVALS_SUMMARY_URL ??
+    process.env.NEXT_PUBLIC_APPROVALS_SUMMARY_URL ??
+    DEFAULT_APPROVALS_SUMMARY_URL;
+  const targetUrl = new URL(upstreamUrl);
+  const searchParams = new URLSearchParams(buildSummaryQuery(filters).replace(/^\?/, ""));
+
+  searchParams.forEach((value, key) => {
+    targetUrl.searchParams.set(key, value);
+  });
+
+  const response = await fetch(targetUrl.toString(), {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("Nao foi possivel carregar o resumo da dashboard.");
+  }
+
+  return (await response.json()) as ResumoDashboard;
+}
+
+function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   const searchParams = new URLSearchParams();
 
   if (filters.benefitType && filters.benefitType !== "ALL") {
@@ -27,15 +70,5 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
     searchParams.set("search", filters.search.trim());
   }
 
-  const query = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
-  const response = await fetch(`/api/aprovacoes/resumo${query}`, {
-    method: "GET",
-    cache: "no-store"
-  });
-
-  if (!response.ok) {
-    throw new Error("Nao foi possivel carregar o resumo da dashboard.");
-  }
-
-  return (await response.json()) as ResumoDashboard;
+  return searchParams.size > 0 ? `?${searchParams.toString()}` : "";
 }

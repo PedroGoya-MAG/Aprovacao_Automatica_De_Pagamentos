@@ -1,6 +1,6 @@
 # Portal de Aprovacao de Pagamentos
 
-Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido com Next.js App Router, TypeScript e Tailwind CSS. O projeto esta pronto para deploy na Vercel, usa dados mockados por padrao e ja possui camada de services preparada para futura integracao com backend.
+Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido com Next.js App Router, TypeScript e Tailwind CSS. O projeto esta preparado para deploy na Vercel e integrado com os endpoints reais do backend via rotas proxy do Next.js.
 
 ## Stack
 
@@ -10,11 +10,16 @@ Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido c
 - Tailwind CSS 4
 - Lucide React
 
-## Estrutura final do projeto
+## Estrutura do projeto
 
 ```text
 .
 |-- app
+|   |-- api
+|   |   `-- aprovacoes
+|   |       |-- lotes
+|   |       |-- pagamentos
+|   |       `-- resumo
 |   |-- globals.css
 |   |-- layout.tsx
 |   |-- loading.tsx
@@ -35,12 +40,15 @@ Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido c
 |-- lib
 |   |-- formatters.ts
 |   `-- utils.ts
-|-- mocks
-|   |-- payment-api.ts
-|   `-- payment-batches.ts
 |-- public
 |-- services
-|   |-- api-config.ts
+|   |-- batch-approval-service.ts
+|   |-- batch-selected-approval-service.ts
+|   |-- dashboard-service.ts
+|   |-- lote-payments-service.ts
+|   |-- payment-approval-service.ts
+|   |-- payment-details-service.ts
+|   |-- payment-rejection-service.ts
 |   `-- payment-service.ts
 |-- types
 |   `-- payments.ts
@@ -53,17 +61,19 @@ Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido c
 `-- README.md
 ```
 
-## Arquivos principais revisados
+## Arquivos principais
 
-- `app/page.tsx`: entrada da home e carregamento inicial dos lotes.
-- `app/loading.tsx`: skeleton loading para experiencia mais profissional.
-- `components/payments/dashboard-shell.tsx`: dashboard principal, cards de lote, lista interna, drawer e feedbacks visuais.
-- `components/layout/app-header.tsx`: cabecalho executivo da aplicacao.
-- `components/ui/toast-stack.tsx`: feedback visual para aprovacoes, rejeicoes e reativacoes.
-- `services/payment-service.ts`: camada de services pronta para mocks ou fetch real.
-- `services/api-config.ts`: centralizacao de base URL, path da API e headers.
-- `mocks/payment-api.ts`: simulacao dos endpoints do dominio de pagamentos.
-- `types/payments.ts`: contratos principais de dominio (`Lote`, `Pagamento`, `StatusPagamento`, `TipoBeneficio`).
+- `app/page.tsx`: carrega lotes e resumo iniciais no servidor.
+- `app/api/aprovacoes/*`: proxies do Next.js para os webhooks do backend.
+- `components/payments/dashboard-shell.tsx`: dashboard principal, cards, tabela de pagamentos, drawer e acoes.
+- `services/payment-service.ts`: listagem principal de lotes.
+- `services/dashboard-service.ts`: resumo da dashboard no client e no server.
+- `services/lote-payments-service.ts`: pagamentos por lote.
+- `services/payment-details-service.ts`: detalhe individual do pagamento.
+- `services/payment-approval-service.ts`: aprovacao individual.
+- `services/payment-rejection-service.ts`: rejeicao individual.
+- `services/batch-selected-approval-service.ts`: aprovacao de pagamentos selecionados.
+- `services/batch-approval-service.ts`: aprovacao do lote inteiro.
 
 ## Como rodar localmente
 
@@ -102,44 +112,29 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 
 ## Variaveis de ambiente
 
-O projeto usa mocks por padrao e pode migrar para backend real apenas mudando variaveis e ajustando a camada de services.
-
-### Obrigatorias para desenvolvimento com mocks
-
 - `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.
-- `NEXT_PUBLIC_ENABLE_MOCKS`: manter `true` para usar os mocks.
-
-### Necessarias para integracao real com backend
-
-- `NEXT_PUBLIC_API_BASE_URL`: URL base da API.
-- `NEXT_PUBLIC_PAYMENTS_API_PATH`: path do recurso de lotes. Exemplo: `/payment-batches`.
-- `API_AUTH_TOKEN`: token server-side para autenticacao quando necessario.
+- `NEXT_PUBLIC_APP_ENV`: ambiente exibido ou utilizado pelo projeto, se necessario.
+- `NEXT_PUBLIC_APPROVALS_SUMMARY_URL`: endpoint publico do resumo.
+- `APPROVALS_SUMMARY_URL`: endpoint server-side do resumo.
+- `NEXT_PUBLIC_APPROVALS_BATCHES_URL`: endpoint publico da listagem de lotes.
+- `APPROVALS_BATCHES_URL`: endpoint server-side da listagem de lotes.
+- `NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL`: base publica dos endpoints de pagamentos e acoes.
+- `APPROVALS_WEBHOOK_BASE_URL`: base server-side dos endpoints de pagamentos e acoes.
+- `API_AUTH_TOKEN`: token server-side opcional para autenticacao futura.
 
 ### Exemplo
 
 ```env
 NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_ENABLE_MOCKS=true
-NEXT_PUBLIC_API_BASE_URL=https://api.interna.exemplo.com
-NEXT_PUBLIC_PAYMENTS_API_PATH=/payment-batches
+NEXT_PUBLIC_APPROVALS_SUMMARY_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo
+APPROVALS_SUMMARY_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo
+NEXT_PUBLIC_APPROVALS_BATCHES_URL=https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes
+APPROVALS_BATCHES_URL=https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes
+NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/603abf2b-0367-4379-b3a7-0407fd7878eb
+APPROVALS_WEBHOOK_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/603abf2b-0367-4379-b3a7-0407fd7878eb
 API_AUTH_TOKEN=
 ```
-
-## Arquitetura de integracao
-
-A camada de services foi preparada para alternar entre mocks e API real sem mudar os componentes da interface:
-
-- `services/api-config.ts`: centraliza configuracao da API.
-- `services/payment-service.ts`: expoe funcoes de dominio como `getLotes`, `getLoteById`, `aprovarLote`, `aprovarPagamento` e `rejeitarPagamento`.
-- `mocks/payment-api.ts`: simula os endpoints com atraso artificial e persistencia em memoria durante a sessao.
-
-Para trocar mocks por backend real:
-
-1. Defina `NEXT_PUBLIC_ENABLE_MOCKS=false`.
-2. Configure `NEXT_PUBLIC_API_BASE_URL` e `NEXT_PUBLIC_PAYMENTS_API_PATH`.
-3. Ajuste os endpoints reais na camada de services, se necessario.
-4. Mantenha os componentes consumindo apenas a camada de dominio.
 
 ## Deploy na Vercel
 
@@ -167,18 +162,6 @@ vercel --prod
 ## Compatibilidade com Vercel
 
 - Projeto em Next.js App Router.
-- `next build` validado com sucesso.
-- Sem dependencia de `vercel.json` para este cenario.
+- Proxies server-side para os endpoints do backend.
 - Variaveis de ambiente compativeis com o modelo da Vercel.
-- Estrutura pronta para SSR/SSG padrao do framework.
-
-## Validacao final
-
-Checklist realizado nesta revisao:
-
-- Estrutura do Next.js revisada.
-- Scripts do `package.json` revisados.
-- Camada de services e mocks organizada.
-- README atualizado.
-- Build de producao executado com sucesso.
-- Projeto limpo para versionamento (`.gitignore` revisado).
+- Estrutura pronta para SSR dinamico e integracao incremental com backend.
