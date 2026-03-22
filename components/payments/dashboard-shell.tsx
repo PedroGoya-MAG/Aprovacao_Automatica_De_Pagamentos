@@ -1376,10 +1376,10 @@ function getPaymentObservation(payment: Payment, batch: PaymentBatch) {
   }
 
   if (payment.status === "REJECTED") {
-    return `Pagamento retirado do lote ${batch.batchNumber} para revisao manual. O mock considera necessidade de validar dados cadastrais antes de nova submissao.`;
+    return `Pagamento retirado do lote ${batch.batchNumber} para revisao manual. E recomendado validar os dados cadastrais antes de uma nova submissao.`;
   }
 
-  return `Pagamento aguardando decisao da gestora Cris. O mock considera conferencias de documento, valor bruto e enquadramento do beneficio antes da aprovacao final.`;
+  return `Pagamento aguardando decisao da gestora Cris. A recomendacao e conferir documento, valor bruto e enquadramento do beneficio antes da aprovacao final.`;
 }
 
 function buildDashboardSummary(batches: PaymentBatch[]): ResumoDashboard {
@@ -1491,6 +1491,7 @@ function statusLabel(status: PaymentStatus) {
 
   return "Pendente";
 }
+
 
 
 
