@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const DEFAULT_APPROVALS_SUMMARY_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo";
+import { getApprovalsSummaryUrl } from "@/lib/env";
 
 export async function GET(request: NextRequest) {
-  const upstreamUrl =
-    process.env.APPROVALS_SUMMARY_URL ??
-    process.env.NEXT_PUBLIC_APPROVALS_SUMMARY_URL ??
-    DEFAULT_APPROVALS_SUMMARY_URL;
-
-  const targetUrl = new URL(upstreamUrl);
+  const targetUrl = new URL(getApprovalsSummaryUrl());
   const incomingParams = request.nextUrl.searchParams;
 
   ["benefitType", "status", "search"].forEach((key) => {

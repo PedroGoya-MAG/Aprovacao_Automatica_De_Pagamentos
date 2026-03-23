@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getApprovalsWebhookBaseUrl } from "@/lib/env";
 import { type Payment } from "@/types/payments";
-
-const DEFAULT_APPROVALS_WEBHOOK_BASE_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/603abf2b-0367-4379-b3a7-0407fd7878eb";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ pagamentoId: string }> }
 ) {
   const { pagamentoId } = await params;
-  const baseUrl =
-    process.env.APPROVALS_WEBHOOK_BASE_URL ??
-    process.env.NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL ??
-    DEFAULT_APPROVALS_WEBHOOK_BASE_URL;
-
-  const targetUrl = `${baseUrl.replace(/\/$/, "")}/api/aprovacoes/pagamentos/${pagamentoId}`;
+  const targetUrl = `${getApprovalsWebhookBaseUrl().replace(/\/$/, "")}/api/aprovacoes/pagamentos/${pagamentoId}`;
 
   try {
     const response = await fetch(targetUrl, {

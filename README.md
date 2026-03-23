@@ -112,7 +112,8 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 
 ## Variaveis de ambiente
 
-- `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.`r`n- `NEXT_PUBLIC_DEMO_MODE`: quando `true`, usa dados locais de demonstracao e nao depende da VPN.
+- NEXT_PUBLIC_PORTAL_TITLE: titulo exibido no cabecalho.
+- NEXT_PUBLIC_DEMO_MODE: quando 	rue, usa dados locais de demonstracao e nao depende da VPN.
 - `NEXT_PUBLIC_APP_ENV`: ambiente exibido ou utilizado pelo projeto, se necessario.
 - `NEXT_PUBLIC_APPROVALS_SUMMARY_URL`: endpoint publico do resumo.
 - `APPROVALS_SUMMARY_URL`: endpoint server-side do resumo.
@@ -120,19 +121,21 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 - `APPROVALS_BATCHES_URL`: endpoint server-side da listagem de lotes.
 - `NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL`: base publica dos endpoints de pagamentos e acoes.
 - `APPROVALS_WEBHOOK_BASE_URL`: base server-side dos endpoints de pagamentos e acoes.
-- `API_AUTH_TOKEN`: token server-side opcional para autenticacao futura.
+- API_AUTH_TOKEN: token server-side opcional para autenticacao futura.
+
+Essas variaveis sao obrigatorias fora do modo demonstracao. Os base paths dos endpoints nao ficam hardcoded no codigo.
 
 ### Exemplo
 
 ```env
 NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_APPROVALS_SUMMARY_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo
-APPROVALS_SUMMARY_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo
-NEXT_PUBLIC_APPROVALS_BATCHES_URL=https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes
-APPROVALS_BATCHES_URL=https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes
-NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/603abf2b-0367-4379-b3a7-0407fd7878eb
-APPROVALS_WEBHOOK_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/603abf2b-0367-4379-b3a7-0407fd7878eb
+NEXT_PUBLIC_APPROVALS_SUMMARY_URL=
+APPROVALS_SUMMARY_URL=
+NEXT_PUBLIC_APPROVALS_BATCHES_URL=
+APPROVALS_BATCHES_URL=
+NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL=
+APPROVALS_WEBHOOK_BASE_URL=
 API_AUTH_TOKEN=
 ```
 
@@ -165,4 +168,5 @@ vercel --prod
 - Proxies server-side para os endpoints do backend.
 - Variaveis de ambiente compativeis com o modelo da Vercel.
 - Estrutura pronta para SSR dinamico e integracao incremental com backend.
+
 

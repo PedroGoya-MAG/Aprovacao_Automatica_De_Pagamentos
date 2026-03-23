@@ -1,8 +1,7 @@
 import { getDemoLotes } from "@/lib/demo-data";
+import { getApprovalsBatchesUrl } from "@/lib/env";
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
-
-const DEFAULT_APPROVALS_BATCHES_URL = "https://capn8nwfhmg.azurewebsites.net/webhook-test/api/aprovacoes/lotes";
 
 type LotesFilters = {
   benefitType?: "ALL" | BenefitType;
@@ -38,12 +37,7 @@ export const paymentService = {
 };
 
 function buildApprovalsBatchesUrl(filters: LotesFilters) {
-  const baseUrl =
-    process.env.APPROVALS_BATCHES_URL ??
-    process.env.NEXT_PUBLIC_APPROVALS_BATCHES_URL ??
-    DEFAULT_APPROVALS_BATCHES_URL;
-
-  const url = new URL(baseUrl);
+  const url = new URL(getApprovalsBatchesUrl());
 
   if (filters.benefitType && filters.benefitType !== "ALL") {
     url.searchParams.set("benefitType", filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate");

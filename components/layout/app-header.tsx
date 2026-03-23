@@ -19,7 +19,6 @@ export function AppHeader() {
             <div className="flex h-14 w-14 items-center justify-center rounded-[22px] bg-[linear-gradient(135deg,var(--brand)_0%,var(--brand-strong)_100%)] shadow-[0_20px_42px_-24px_rgba(23,101,214,0.7)]">
               <Landmark className="h-6 w-6 text-white" />
             </div>
-            <span className="data-chip">Uso interno da gestora Cris</span>
             <span className="data-chip">Fluxo financeiro controlado</span>
             {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
           </div>
