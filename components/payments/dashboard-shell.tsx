@@ -609,29 +609,6 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="panel px-5 py-5 sm:px-6">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Carteira de aprovacao</p>
-              <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">Lotes em acompanhamento</h2>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600">
-                Visualize cada lote em cards executivos, expanda detalhes quando necessario e aprove com contexto.
-              </p>
-            </div>
-            <span className="data-chip">{visibleBatches.length} lote(s) em exibicao</span>
-          </div>
-        </div>
-
-        <div className="sub-panel bg-[linear-gradient(135deg,rgba(22,99,214,0.08)_0%,rgba(15,118,110,0.1)_100%)] px-5 py-5">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Leitura rapida</p>
-          <div className="mt-3 grid gap-3 text-sm text-slate-600 sm:grid-cols-3 xl:grid-cols-1">
-            <QuickLine label="Priorizacao" value="Comece pelos lotes com maior valor ou mais pagamentos." />
-            <QuickLine label="Controle" value="Desmarque ou rejeite itens especificos antes da aprovacao em lote." />
-            <QuickLine label="Apresentacao" value="A home esta pronta para demonstracoes em ambiente corporativo." />
-          </div>
-        </div>
-      </div>
 
       <FiltersBar
         filterType={filterType}
@@ -740,20 +717,6 @@ function SummaryCard({ icon: Icon, label, value, helper, tone }: SummaryCardProp
           <p className="text-sm text-slate-600">{helper}</p>
         </div>
       </div>
-    </div>
-  );
-}
-
-type QuickLineProps = {
-  label: string;
-  value: string;
-};
-
-function QuickLine({ label, value }: QuickLineProps) {
-  return (
-    <div className="rounded-2xl bg-white/85 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p>
-      <p className="mt-1 text-sm font-medium text-slate-700">{value}</p>
     </div>
   );
 }

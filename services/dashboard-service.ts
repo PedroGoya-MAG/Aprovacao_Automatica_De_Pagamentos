@@ -1,4 +1,5 @@
 import { getDemoResumoDashboard } from "@/lib/demo-data";
+import { getApprovalsSummaryUrl } from "@/lib/env";
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
@@ -7,8 +8,6 @@ type DashboardSummaryFilters = {
   status?: "ALL" | PaymentStatus;
   search?: string;
 };
-
-const DEFAULT_APPROVALS_SUMMARY_URL = "https://capn8nwfhmg.azurewebsites.net/webhook/api/aprovacoes/resumo";
 
 export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) {
   if (isDemoMode()) {
@@ -33,11 +32,7 @@ export async function getResumoDashboardServer(filters: DashboardSummaryFilters 
     return getDemoResumoDashboard(filters);
   }
 
-  const upstreamUrl =
-    process.env.APPROVALS_SUMMARY_URL ??
-    process.env.NEXT_PUBLIC_APPROVALS_SUMMARY_URL ??
-    DEFAULT_APPROVALS_SUMMARY_URL;
-  const targetUrl = new URL(upstreamUrl);
+  const targetUrl = new URL(getApprovalsSummaryUrl());
   const searchParams = new URLSearchParams(buildSummaryQuery(filters).replace(/^\?/, ""));
 
   searchParams.forEach((value, key) => {
