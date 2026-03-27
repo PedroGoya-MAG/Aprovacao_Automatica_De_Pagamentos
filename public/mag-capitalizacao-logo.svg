@@ -1,7 +1,5 @@
-<svg width="220" height="58" viewBox="0 0 220 58" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="220" height="58" fill="white"/>
-  <path d="M6 11H18.8L27.5 31.2L36.2 11H48.8V46H39.4V24.1L31.3 43H23.5L15.4 24.1V46H6V11Z" fill="#1180C8"/>
-  <path d="M58.2 46L72.3 11H86.6L100.5 46H89.9L87.7 39.6H70.8L68.4 46H58.2ZM73.7 31.8H84.8L79.3 16.8L73.7 31.8Z" fill="#1180C8"/>
-  <path d="M105.6 46V11H121.1C134.2 11 142.3 17.8 142.3 28.5C142.3 39.2 134 46 121.1 46H105.6ZM115.5 37.8H120.5C128.3 37.8 132.2 34.2 132.2 28.5C132.2 22.8 128.3 19.2 120.5 19.2H115.5V37.8Z" fill="#1180C8"/>
-  <text x="150" y="26" fill="#6B7280" font-family="Segoe UI, Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="1.4">CAPITALIZACAO</text>
+﻿<svg width="220" height="92" viewBox="0 0 220 92" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="220" height="92" fill="white"/>
+  <text x="8" y="49" fill="#10A4E2" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700" letter-spacing="0.4">MAG</text>
+  <text x="68" y="74" fill="#8A8A8F" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="500" letter-spacing="0.9">CAPITALIZACAO</text>
 </svg>
