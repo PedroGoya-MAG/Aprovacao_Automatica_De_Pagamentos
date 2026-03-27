@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { CircleCheckBig, Search, SlidersHorizontal, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,9 @@ type FiltersBarProps = {
   filterStatus: "ALL" | PaymentStatus;
   search: string;
   totalResults: number;
+  canApproveAll: boolean;
+  processingAllVisible: boolean;
+  onApproveAll: () => void;
   onFilterChange: (value: "ALL" | BenefitType) => void;
   onStatusChange: (value: "ALL" | PaymentStatus) => void;
   onSearchChange: (value: string) => void;
@@ -35,6 +38,9 @@ export function FiltersBar({
   filterStatus,
   search,
   totalResults,
+  canApproveAll,
+  processingAllVisible,
+  onApproveAll,
   onFilterChange,
   onStatusChange,
   onSearchChange,
@@ -44,61 +50,53 @@ export function FiltersBar({
 
   return (
     <div className="panel flex flex-col gap-5 px-5 py-5 sm:px-6">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros operacionais
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <SlidersHorizontal className="h-4 w-4 text-[color:var(--brand)]" />
+            Filtros de operacao liberada
           </div>
-          <p className="text-sm text-slate-600">{totalResults} lote(s) exibido(s) com os criterios atuais.</p>
+          <p className="max-w-3xl text-sm leading-6 text-slate-600">
+            {totalResults} lote(s) exibido(s) ja liberados para decisao ou com suspeitas previamente resolvidas.
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="hidden rounded-full bg-[linear-gradient(135deg,rgba(22,99,214,0.12)_0%,rgba(15,118,110,0.12)_100%)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 xl:inline-flex">
-            <Sparkles className="mr-2 h-4 w-4" />
-            Atualizacao em tempo real
-          </span>
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           {hasActiveFilters ? (
             <Button type="button" variant="ghost" size="sm" onClick={onReset}>
-              <X className="h-4 w-4" />
-              Limpar filtros
+              <X className="h-4 w-4" />Limpar filtros
             </Button>
           ) : null}
+          <Button type="button" variant="primary" size="sm" className="min-w-[164px] rounded-lg shadow-none" disabled={!canApproveAll || processingAllVisible} onClick={onApproveAll}>
+            <CircleCheckBig className="h-4 w-4" />
+            {processingAllVisible ? "Aprovando lotes..." : "Aprovar tudo"}
+          </Button>
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <label className="relative block w-full">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={search}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Buscar por beneficiario, documento ou ID do lote"
-            className="h-12 w-full rounded-2xl border border-sky-100 bg-white/95 pl-11 pr-4 text-sm text-slate-700 outline-none transition focus:border-[color:var(--brand)] focus:ring-4 focus:ring-sky-100"
-          />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+        <label className="block w-full">
+          <div className="flex h-12 items-center gap-3 rounded-lg border border-[color:var(--border)] bg-white px-4 transition focus-within:border-[color:var(--brand)] focus-within:ring-2 focus-within:ring-sky-100">
+            <Search className="h-4 w-4 shrink-0 self-center text-slate-400" />
+            <input
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Buscar por beneficiario, documento ou ID do lote"
+              className="h-full w-full border-0 bg-transparent text-sm text-slate-700 outline-none"
+            />
+          </div>
         </label>
-
-        <div className="rounded-[28px] border border-[color:var(--border)] bg-[linear-gradient(135deg,rgba(22,99,214,0.05)_0%,rgba(15,118,110,0.07)_100%)] px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Escopo da busca</p>
+        <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3.5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Escopo</p>
           <p className="mt-1 text-sm text-slate-600">
-            Nome do beneficiario, documento e identificadores do lote respondem automaticamente.
+            Esta area lista apenas lotes e pagamentos prontos para decisao. Itens suspeitos pendentes de triagem ficam concentrados acima, no painel gerencial.
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <FilterGroup
-          label="Tipo de beneficio"
-          options={benefitFilters}
-          activeValue={filterType}
-          onSelect={onFilterChange}
-        />
-        <FilterGroup
-          label="Status"
-          options={statusFilters}
-          activeValue={filterStatus}
-          onSelect={onStatusChange}
-        />
+        <FilterGroup label="Tipo de beneficio" options={benefitFilters} activeValue={filterType} onSelect={onFilterChange} />
+        <FilterGroup label="Status" options={statusFilters} activeValue={filterStatus} onSelect={onStatusChange} />
       </div>
     </div>
   );
@@ -111,31 +109,8 @@ type FilterGroupProps<TValue extends string> = {
   onSelect: (value: TValue) => void;
 };
 
-function FilterGroup<TValue extends string>({
-  label,
-  options,
-  activeValue,
-  onSelect
-}: FilterGroupProps<TValue>) {
-  return (
-    <div className="rounded-[28px] border border-[color:var(--border)] bg-slate-50/80 px-4 py-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <div className="flex flex-wrap gap-3">
-        {options.map((option) => (
-          <Button
-            key={option.value}
-            type="button"
-            variant={activeValue === option.value ? "primary" : "secondary"}
-            className={cn(
-              "min-w-[120px] justify-center",
-              activeValue === option.value && "shadow-[0_16px_28px_-20px_rgba(22,99,214,0.8)]"
-            )}
-            onClick={() => onSelect(option.value)}
-          >
-            {option.label}
-          </Button>
-        ))}
-      </div>
-    </div>
-  );
+function FilterGroup<TValue extends string>({ label, options, activeValue, onSelect }: FilterGroupProps<TValue>) {
+  return <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-4"><p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p><div className="flex flex-wrap gap-2">{options.map((option) => <Button key={option.value} type="button" variant={activeValue === option.value ? "primary" : "secondary"} size="sm" className={cn("min-w-[110px] justify-center rounded-full")} onClick={() => onSelect(option.value)}>{option.label}</Button>)}</div></div>;
 }
+
+
