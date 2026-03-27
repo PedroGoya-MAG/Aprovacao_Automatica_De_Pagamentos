@@ -1,4 +1,4 @@
-﻿import { CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { type PaymentStatus } from "@/types/payments";
@@ -14,17 +14,17 @@ const statusMap: Record<
 > = {
   PENDING: {
     text: "Pendente",
-    className: "border-amber-200/80 bg-amber-50/90 text-amber-800",
+    className: "border-amber-200 bg-amber-50 text-amber-800",
     icon: Clock3
   },
   APPROVED: {
     text: "Aprovado",
-    className: "border-emerald-200/80 bg-emerald-50/90 text-emerald-800",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
     icon: CheckCircle2
   },
   REJECTED: {
     text: "Rejeitado",
-    className: "border-rose-200/80 bg-rose-50/90 text-rose-800",
+    className: "border-rose-200 bg-rose-50 text-rose-800",
     icon: XCircle
   }
 };
@@ -36,11 +36,11 @@ export function StatusBadge({ status, label }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold shadow-[0_14px_30px_-22px_rgba(15,23,42,0.28)]",
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
         config.className
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-3.5 w-3.5" />
       {label ?? config.text}
     </span>
   );

@@ -1,4 +1,4 @@
-import { AppHeader } from "@/components/layout/app-header";
+﻿import { AppHeader } from "@/components/layout/app-header";
 import { DashboardShell } from "@/components/payments/dashboard-shell";
 import { getResumoDashboardServer } from "@/services/dashboard-service";
 import { getLotes } from "@/services/payment-service";
@@ -12,9 +12,11 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-8 px-4 py-6 sm:px-6 xl:px-8">
-      <AppHeader />
-      <DashboardShell initialBatches={batches} initialSummary={initialSummary} />
+    <main className="min-h-screen w-full">
+      <AppHeader activeTab="approvals" />
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-5 sm:px-6 xl:px-8">
+        <DashboardShell initialBatches={batches} initialSummary={initialSummary} />
+      </div>
     </main>
   );
 }

@@ -1,4 +1,4 @@
-﻿import { Gift, Wallet } from "lucide-react";
+import { Gift, Wallet } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatBenefitType } from "@/lib/formatters";
@@ -16,14 +16,14 @@ export function BenefitBadge({ benefitType, className }: BenefitBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-semibold shadow-[0_14px_30px_-22px_rgba(15,23,42,0.32)]",
+        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
         isSorteio
-          ? "border-sky-200/80 bg-[linear-gradient(135deg,rgba(22,99,214,0.14)_0%,rgba(92,163,255,0.14)_100%)] text-sky-800"
-          : "border-teal-200/80 bg-[linear-gradient(135deg,rgba(15,118,110,0.14)_0%,rgba(45,212,191,0.14)_100%)] text-teal-800",
+          ? "border-sky-200 bg-sky-50 text-sky-800"
+          : "border-emerald-200 bg-emerald-50 text-emerald-800",
         className
       )}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-3.5 w-3.5" />
       {formatBenefitType(benefitType)}
     </span>
   );
