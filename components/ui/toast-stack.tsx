@@ -16,18 +16,21 @@ type ToastStackProps = {
   onDismiss: (id: number) => void;
 };
 
-const toneMap: Record<ToastTone, { icon: typeof CheckCircle2; className: string }> = {
+const toneMap: Record<ToastTone, { icon: typeof CheckCircle2; className: string; iconClassName: string }> = {
   success: {
     icon: CheckCircle2,
-    className: "border-emerald-200 bg-white text-slate-800"
+    className: "border-[color:rgba(44,201,16,0.32)] bg-white text-[color:var(--foreground)]",
+    iconClassName: "bg-[color:rgba(44,201,16,0.12)] text-green-700"
   },
   warning: {
     icon: TriangleAlert,
-    className: "border-amber-200 bg-white text-slate-800"
+    className: "border-[color:rgba(245,159,0,0.4)] bg-white text-[color:var(--foreground)]",
+    iconClassName: "bg-[color:rgba(245,159,0,0.14)] text-amber-700"
   },
   info: {
     icon: Info,
-    className: "border-sky-200 bg-white text-slate-800"
+    className: "border-[color:rgba(0,120,168,0.32)] bg-white text-[color:var(--foreground)]",
+    iconClassName: "bg-[color:rgba(0,120,168,0.12)] text-[color:var(--info)]"
   }
 };
 
@@ -42,18 +45,18 @@ export function ToastStack({ toasts, onDismiss }: ToastStackProps) {
           <div
             key={toast.id}
             className={cn(
-              "pointer-events-auto rounded-xl border px-4 py-4 shadow-sm transition duration-200 animate-[toast-in_220ms_ease-out]",
+              "pointer-events-auto rounded-[var(--radius-lg)] border px-4 py-4 shadow-[var(--shadow-soft)] transition duration-200 animate-[toast-in_220ms_ease-out]",
               config.className
             )}
             role="status"
             aria-live="polite"
           >
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-soft)]">
-                <Icon className="h-5 w-5 text-[color:var(--brand-deep)]" />
+              <div className={cn("mt-0.5 flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)]", config.iconClassName)}>
+                <Icon className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-950">{toast.title}</p>
+                <p className="text-sm font-bold text-[color:var(--brand-deep)]">{toast.title}</p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">{toast.description}</p>
               </div>
               <button

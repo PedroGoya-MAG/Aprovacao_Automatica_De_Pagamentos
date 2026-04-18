@@ -1,47 +1,26 @@
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { type PaymentStatus } from "@/types/payments";
+import { Badge } from "@/components/ui/badge";
+import type { PaymentStatus } from "@/types/payments";
 
 type StatusBadgeProps = {
   status: PaymentStatus;
-  label?: string;
 };
 
-const statusMap: Record<
-  PaymentStatus,
-  { text: string; className: string; icon: typeof Clock3 }
-> = {
-  PENDING: {
-    text: "Pendente",
-    className: "border-amber-200 bg-amber-50 text-amber-800",
-    icon: Clock3
-  },
-  APPROVED: {
-    text: "Aprovado",
-    className: "border-emerald-200 bg-emerald-50 text-emerald-800",
-    icon: CheckCircle2
-  },
-  REJECTED: {
-    text: "Rejeitado",
-    className: "border-rose-200 bg-rose-50 text-rose-800",
-    icon: XCircle
-  }
+const statusConfig: Record<PaymentStatus, { label: string; icon: typeof Clock3; tone: "warning" | "success" | "error" }> = {
+  PENDING: { label: "Pendente", icon: Clock3, tone: "warning" },
+  APPROVED: { label: "Aprovado", icon: CheckCircle2, tone: "success" },
+  REJECTED: { label: "Rejeitado", icon: XCircle, tone: "error" }
 };
 
-export function StatusBadge({ status, label }: StatusBadgeProps) {
-  const config = statusMap[status];
+export function StatusBadge({ status }: StatusBadgeProps) {
+  const config = statusConfig[status];
   const Icon = config.icon;
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-        config.className
-      )}
-    >
+    <Badge tone={config.tone} size="md" className="whitespace-nowrap">
       <Icon className="h-3.5 w-3.5" />
-      {label ?? config.text}
-    </span>
+      {config.label}
+    </Badge>
   );
 }

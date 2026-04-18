@@ -1,4 +1,4 @@
-﻿import { AppHeader } from "@/components/layout/app-header";
+import { AppHeader } from "@/components/layout/app-header";
 import { HistoryShell } from "@/components/history/history-shell";
 import { getHistoricalBatches, getHistoricalSummary, getHistoryCompetences } from "@/services/history-insights-service";
 

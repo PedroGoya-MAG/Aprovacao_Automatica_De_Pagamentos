@@ -1,17 +1,13 @@
 import type { Metadata } from "next";
-import { Manrope, Sora } from "next/font/google";
+import { Roboto } from "next/font/google";
 import type { ReactNode } from "react";
 
 import "./globals.css";
 
-const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"]
-});
-
-const sora = Sora({
-  variable: "--font-sora",
-  subsets: ["latin"]
+const roboto = Roboto({
+  variable: "--font-roboto",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"]
 });
 
 export const metadata: Metadata = {
@@ -26,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${sora.variable}`}>{children}</body>
+      <body className={roboto.variable}>{children}</body>
     </html>
   );
 }
