@@ -2,7 +2,7 @@ import { forwardRef, type ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "success";
+type ButtonVariant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "destructive" | "success";
 type ButtonSize = "md" | "sm" | "icon";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -12,38 +12,43 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "border-[color:var(--brand)] bg-[color:var(--brand)] text-white hover:bg-[color:var(--brand-strong)] hover:border-[color:var(--brand-strong)] active:bg-[color:var(--brand-deep)]",
+    "border-[color:var(--brand)] bg-[color:var(--brand)] text-white hover:border-[color:var(--brand-strong)] hover:bg-[color:var(--brand-strong)] focus-visible:ring-[color:var(--brand)]",
   secondary:
-    "border-[color:var(--border)] bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 active:bg-slate-100",
+    "border-[color:var(--border)] bg-white text-[color:var(--brand-deep)] hover:border-[color:var(--brand)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
+  outline:
+    "border-[color:var(--brand)] bg-transparent text-[color:var(--brand-strong)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
   ghost:
-    "border-transparent bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950 active:bg-slate-200/70",
+    "border-transparent bg-transparent text-[color:var(--brand-strong)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
   danger:
-    "border-rose-600 bg-rose-600 text-white hover:bg-rose-700 hover:border-rose-700 active:bg-rose-800",
+    "border-[color:var(--danger)] bg-[color:var(--danger)] text-white hover:border-red-700 hover:bg-red-700 focus-visible:ring-[color:var(--danger)]",
+  destructive:
+    "border-[color:var(--danger)] bg-[color:var(--danger)] text-white hover:border-red-700 hover:bg-red-700 focus-visible:ring-[color:var(--danger)]",
   success:
-    "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700 hover:border-emerald-700 active:bg-emerald-800"
+    "border-[color:var(--success)] bg-[color:var(--success)] text-[color:var(--mag-dark-blue-primary)] hover:border-green-600 hover:bg-green-500 focus-visible:ring-[color:var(--success)]"
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
   md: "h-10 px-4 text-sm",
-  sm: "h-8 px-3 text-sm",
+  sm: "h-8 px-3 text-xs",
   icon: "h-10 w-10 px-0"
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant = "primary", size = "md", type = "button", ...props },
-  ref
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg border font-semibold transition duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-200 disabled:pointer-events-none disabled:opacity-45",
-        variantStyles[variant],
-        sizeStyles[size],
-        className
-      )}
-      {...props}
-    />
-  );
-});
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant = "primary", size = "md", type = "button", ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border px-4 font-medium shadow-none transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55",
+          variantStyles[variant],
+          sizeStyles[size],
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
+
+Button.displayName = "Button";

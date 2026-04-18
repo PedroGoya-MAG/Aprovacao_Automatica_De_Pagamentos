@@ -1,4 +1,4 @@
-﻿import { AppHeader } from "@/components/layout/app-header";
+import { AppHeader } from "@/components/layout/app-header";
 import { MonthlyShell } from "@/components/monthly/monthly-shell";
 import { getHistoricalBatches, getMonthlyOptions } from "@/services/history-insights-service";
 

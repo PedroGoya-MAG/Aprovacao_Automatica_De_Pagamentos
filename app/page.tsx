@@ -1,4 +1,4 @@
-﻿import { AppHeader } from "@/components/layout/app-header";
+import { AppHeader } from "@/components/layout/app-header";
 import { DashboardShell } from "@/components/payments/dashboard-shell";
 import { getResumoDashboardServer } from "@/services/dashboard-service";
 import { getLotes } from "@/services/payment-service";

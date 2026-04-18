@@ -1,4 +1,4 @@
-﻿import type { Route } from "next";
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
@@ -44,7 +44,7 @@ export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTa
   const activeContent = activeDescriptions[activeTab];
 
   return (
-    <header className="panel overflow-hidden rounded-none border-x-0 border-t-0 border-b border-[color:var(--border)] bg-white shadow-none">
+    <header className="overflow-hidden border-b border-[color:var(--border)] bg-white">
       <div className="border-b border-[color:var(--border)] px-5 py-3 sm:px-6 xl:px-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
@@ -75,8 +75,8 @@ export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTa
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
           <div className="space-y-5">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--brand)]">{activeContent.eyebrow}</p>
-              <h1 className="text-4xl font-semibold tracking-[-0.03em] text-slate-950 sm:text-5xl">{portalTitle}</h1>
+              <p className="mag-label text-[color:var(--brand)]">{activeContent.eyebrow}</p>
+              <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em] text-[color:var(--brand-deep)] sm:text-[32px]">{portalTitle}</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-600">{activeContent.description}</p>
             </div>
 
@@ -93,8 +93,8 @@ export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTa
                         className={[
                           "inline-flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-semibold transition",
                           isActive
-                            ? "border-[color:var(--brand)] text-slate-950"
-                            : "border-transparent text-slate-600 hover:text-slate-950"
+                            ? "border-[color:var(--brand)] text-[color:var(--brand-deep)]"
+                            : "border-transparent text-slate-600 hover:text-[color:var(--brand-deep)]"
                         ].join(" ")}
                       >
                         <Icon className="h-4 w-4" />
@@ -107,14 +107,14 @@ export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTa
             </nav>
           </div>
 
-          <div className="sub-panel bg-[color:var(--surface-muted)] px-5 py-4">
+          <div className="panel-dark px-5 py-4">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--brand-soft)]">
-                <ShieldCheck className="h-5 w-5 text-[color:var(--brand-deep)]" />
+              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10">
+                <ShieldCheck className="h-5 w-5 text-[color:var(--mag-green)]" />
               </div>
               <div className="space-y-2">
-                <p className="text-sm font-semibold text-slate-950">{activeContent.sideTitle}</p>
-                <p className="text-sm leading-6 text-slate-600">{activeContent.sideText}</p>
+                <p className="text-sm font-bold text-white">{activeContent.sideTitle}</p>
+                <p className="text-sm leading-6 text-white/80">{activeContent.sideText}</p>
               </div>
             </div>
           </div>
