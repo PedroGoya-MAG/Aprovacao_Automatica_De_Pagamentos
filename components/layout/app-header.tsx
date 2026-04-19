@@ -1,14 +1,15 @@
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
+import { Building2, CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
 
-type AppHeaderTab = "approvals" | "history" | "monthly";
+type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
 
 const navItems: Array<{ label: string; icon: typeof ClipboardCheck; href: Route; value: AppHeaderTab }> = [
   { label: "Aprovacoes", icon: ClipboardCheck, href: "/" as Route, value: "approvals" },
   { label: "Historico", icon: History, href: "/historico" as Route, value: "history" },
-  { label: "Visao mensal", icon: CalendarRange, href: "/visao-mensal" as Route, value: "monthly" }
+  { label: "Visao mensal", icon: CalendarRange, href: "/visao-mensal" as Route, value: "monthly" },
+  { label: "Tesouraria", icon: Building2, href: "/tesouraria" as Route, value: "treasury" }
 ];
 
 const activeDescriptions: Record<
@@ -35,6 +36,13 @@ const activeDescriptions: Record<
       "Acompanhe o comportamento do mes com indicadores, volumes recebidos e sinais de atencao para leitura gerencial da operacao.",
     sideTitle: "Leitura gerencial",
     sideText: "Area preparada para acompanhar totais do mes, motivos de suspeita e comportamento diario e semanal dos pagamentos."
+  },
+  treasury: {
+    eyebrow: "Tesouraria",
+    description:
+      "Consulte os pagamentos importados no PagNet com visao operacional por data de importacao, busca rapida e filtros objetivos.",
+    sideTitle: "Monitoramento de importacoes",
+    sideText: "Tela somente leitura para acompanhamento do que ja foi importado para o PagNet, agrupado por dia de importacao."
   }
 };
 
