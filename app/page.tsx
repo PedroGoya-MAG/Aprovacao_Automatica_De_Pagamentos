@@ -1,11 +1,35 @@
+import type { Route } from "next";
 import { AppHeader } from "@/components/layout/app-header";
 import { DashboardShell } from "@/components/payments/dashboard-shell";
+import { redirect } from "next/navigation";
 import { getResumoDashboardServer } from "@/services/dashboard-service";
 import { getLotes } from "@/services/payment-service";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+export default async function Home({
+  searchParams
+}: {
+  searchParams: Promise<{ code?: string; state?: string; error?: string }>;
+}) {
+  const { code, state, error } = await searchParams;
+
+  if (error) {
+    redirect("/api/auth/logout?local=true");
+  }
+
+  if (code) {
+    const callbackUrl = new URL("/api/auth/callback", "http://localhost");
+
+    callbackUrl.searchParams.set("code", code);
+
+    if (state) {
+      callbackUrl.searchParams.set("state", state);
+    }
+
+    redirect(`${callbackUrl.pathname}${callbackUrl.search}` as Route);
+  }
+
   const [batches, initialSummary] = await Promise.all([
     getLotes().catch(() => []),
     getResumoDashboardServer().catch(() => null)
