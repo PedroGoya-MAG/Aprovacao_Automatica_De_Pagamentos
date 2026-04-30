@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokenResponse = await exchangeCodeForToken(code);
+    console.log(tokenResponse);
     const session = resolveSessionFromAccessToken(tokenResponse.access_token);
 
     if (!session) {

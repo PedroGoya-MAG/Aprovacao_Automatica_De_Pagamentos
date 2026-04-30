@@ -27,6 +27,7 @@ export interface AuthenticatedSession {
     id: string;
     name: string;
     email?: string;
+    roleCandidates: string[];
     claims: AuthTokenPayload;
   };
 }

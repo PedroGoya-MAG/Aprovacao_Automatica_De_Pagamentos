@@ -1,4 +1,4 @@
-import { decodeJwtPayload, isJwtExpired } from "@/lib/auth/jwt";
+import { decodeJwtPayload, extractClaimStrings, isJwtExpired } from "@/lib/auth/jwt";
 import { type AuthenticatedSession } from "@/types/auth";
 
 export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_access_token";
@@ -24,6 +24,7 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
     (nameParts.length > 0 ? nameParts.join(" ") : "") ||
     email ||
     (typeof payload.sub === "string" ? payload.sub : "Usuario MAG");
+  const roleCandidates = extractClaimStrings(payload, ["role", "roles", "perfil", "profile", "groups"]);
 
   return {
     accessToken,
@@ -33,6 +34,7 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
       id: typeof payload.sub === "string" ? payload.sub : email ?? name,
       name,
       email,
+      roleCandidates,
       claims: payload
     }
   };

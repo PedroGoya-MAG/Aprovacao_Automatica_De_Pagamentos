@@ -25,10 +25,10 @@ export function buildAuthorizeUrl(state: string) {
 }
 
 export async function exchangeCodeForToken(code: string) {
-  const basicAuth = Buffer.from(`${getAuthClientId()}:${getAuthClientSecret()}`).toString("base64");
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     client_id: getAuthClientId(),
+    client_secret: getAuthClientSecret(),
     code,
     redirect_uri: getAuthRedirectUri()
   });
@@ -37,9 +37,7 @@ export async function exchangeCodeForToken(code: string) {
     method: "POST",
     cache: "no-store",
     headers: {
-      Authorization: `Basic ${basicAuth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-      Accept: "application/json"
+      "Content-Type": "application/x-www-form-urlencoded"
     },
     body: body.toString()
   });

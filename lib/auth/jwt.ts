@@ -34,3 +34,29 @@ export function isJwtExpired(payload: AuthTokenPayload) {
 
   return payload.exp * 1000 <= Date.now();
 }
+
+export function extractClaimStrings(payload: AuthTokenPayload, keys: string[]) {
+  const values = new Set<string>();
+
+  keys.forEach((key) => {
+    const value = payload[key];
+
+    if (typeof value === "string") {
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => values.add(item));
+    }
+
+    if (Array.isArray(value)) {
+      value
+        .flatMap((item) => (typeof item === "string" ? item.split(",") : []))
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .forEach((item) => values.add(item));
+    }
+  });
+
+  return Array.from(values);
+}
