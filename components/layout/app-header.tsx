@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Building2, CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
 
+import { getServerSession } from "@/lib/auth/session";
+
 type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
 
 const navItems: Array<{ label: string; icon: typeof ClipboardCheck; href: Route; value: AppHeaderTab }> = [
@@ -46,10 +48,11 @@ const activeDescriptions: Record<
   }
 };
 
-export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTab }) {
+export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTab }) {
   const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovacao de Pagamentos";
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const activeContent = activeDescriptions[activeTab];
+  const session = await getServerSession();
 
   return (
     <header className="overflow-hidden border-b border-[color:var(--border)] bg-white">
@@ -75,6 +78,15 @@ export function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTa
             <span className="data-chip">Uso corporativo</span>
             <span className="data-chip">Fluxo operacional</span>
             {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
+            {session ? <span className="data-chip">{session.user.name}</span> : null}
+            {session ? (
+              <a
+                href="/api/auth/logout"
+                className="inline-flex h-8 items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--border)] bg-white px-3 text-xs font-semibold text-[color:var(--brand-deep)] transition hover:border-[color:var(--brand)] hover:bg-[color:var(--brand-soft)]"
+              >
+                Sair
+              </a>
+            ) : null}
           </div>
         </div>
       </div>
