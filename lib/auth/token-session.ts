@@ -1,7 +1,7 @@
-import { decodeJwtPayload, extractClaimStrings, isJwtExpired } from "@/lib/auth/jwt";
+import { decodeJwtPayload, extractClaimStrings, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
 import { type AuthenticatedSession } from "@/types/auth";
 
-export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_access_token";
+export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_hmg_access_token";
 export const AUTH_STATE_COOKIE = "mag_identidade_oauth_state";
 export const AUTH_RETURN_TO_COOKIE = "mag_identidade_return_to";
 
@@ -24,7 +24,12 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
     (nameParts.length > 0 ? nameParts.join(" ") : "") ||
     email ||
     (typeof payload.sub === "string" ? payload.sub : "Usuario MAG");
+  const scopes = extractScopeValues(payload);
   const roleCandidates = extractClaimStrings(payload, ["role", "roles", "perfil", "profile", "groups"]);
+
+  if (!scopes.includes("dash.beneficio")) {
+    return null;
+  }
 
   return {
     accessToken,
@@ -34,6 +39,8 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
       id: typeof payload.sub === "string" ? payload.sub : email ?? name,
       name,
       email,
+      scopes,
+      permissionLevel: "ADMIN",
       roleCandidates,
       claims: payload
     }

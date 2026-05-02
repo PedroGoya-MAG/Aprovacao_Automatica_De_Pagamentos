@@ -30,11 +30,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokenResponse = await exchangeCodeForToken(code);
-    console.log(tokenResponse);
     const session = resolveSessionFromAccessToken(tokenResponse.access_token);
 
     if (!session) {
-      const response = NextResponse.redirect(new URL("/api/auth/logout?local=true", request.url));
+      const response = new NextResponse(
+        "Usuario autenticado sem o scope dash.beneficio. O acesso ao portal nao foi liberado.",
+        { status: 403 }
+      );
       clearAuthSessionCookies(response);
       return response;
     }

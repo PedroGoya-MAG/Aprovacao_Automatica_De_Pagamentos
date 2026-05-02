@@ -15,7 +15,7 @@ export default async function Home({
   const { code, state, error } = await searchParams;
 
   if (error) {
-    redirect("/api/auth/logout?local=true");
+    redirect("/api/auth/logout?local=true" as Route);
   }
 
   if (code) {

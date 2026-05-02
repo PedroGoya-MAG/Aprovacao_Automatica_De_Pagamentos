@@ -60,3 +60,23 @@ export function extractClaimStrings(payload: AuthTokenPayload, keys: string[]) {
 
   return Array.from(values);
 }
+
+export function extractScopeValues(payload: AuthTokenPayload) {
+  const scope = payload.scope ?? payload.scp;
+
+  if (typeof scope === "string") {
+    return scope
+      .split(/[\s,]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(scope)) {
+    return scope
+      .flatMap((item) => (typeof item === "string" ? item.split(/[\s,]+/) : []))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}

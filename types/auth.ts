@@ -27,6 +27,8 @@ export interface AuthenticatedSession {
     id: string;
     name: string;
     email?: string;
+    scopes: string[];
+    permissionLevel: "ADMIN";
     roleCandidates: string[];
     claims: AuthTokenPayload;
   };

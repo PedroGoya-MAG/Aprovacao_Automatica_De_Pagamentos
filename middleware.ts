@@ -24,7 +24,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname === "/" && searchParams.has("code")) {
+  if (pathname === "/" && (searchParams.has("code") || searchParams.has("error"))) {
     return NextResponse.next();
   }
 
