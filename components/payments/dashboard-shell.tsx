@@ -307,7 +307,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
     setProcessingPaymentId(paymentId);
 
     try {
-      const result = await rejectPaymentById(paymentId);
+      const result = await rejectPaymentById(paymentId, reason);
       updatePaymentStatus(batchId, String(result.id), result.status, reason);
       setRejectionDraft(null);
     } catch {

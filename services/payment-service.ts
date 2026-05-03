@@ -1,5 +1,5 @@
 import { getDemoLotes } from "@/lib/demo-data";
-import { getApprovalsBatchesUrl } from "@/lib/env";
+import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
 
@@ -13,22 +13,13 @@ export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
     return getDemoLotes(filters);
   }
 
-  const response = await fetch(buildApprovalsBatchesUrl(filters), {
-    cache: "no-store",
-    headers: {
-      Accept: "application/json"
-    }
-  });
+  const data = await n8nGet<unknown>("approvals", "batches", buildApprovalsBatchesParams(filters));
 
-  if (!response.ok) {
-    throw new Error("Nao foi possivel carregar os lotes de pagamentos.");
+  if (!Array.isArray(data)) {
+    return [];
   }
 
-  const data = (await response.json()) as Lote[];
-  return data.map((batch) => ({
-    ...batch,
-    payments: batch.payments ?? []
-  }));
+  return data.map((batch, index) => normalizeBatch(batch, index));
 }
 
 export const paymentService = {
@@ -36,11 +27,11 @@ export const paymentService = {
   listBatches: getLotes
 };
 
-function buildApprovalsBatchesUrl(filters: LotesFilters) {
-  const url = new URL(getApprovalsBatchesUrl());
+function buildApprovalsBatchesParams(filters: LotesFilters) {
+  const params: Record<string, string> = {};
 
   if (filters.benefitType && filters.benefitType !== "ALL") {
-    url.searchParams.set("benefitType", filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate");
+    params.benefitType = filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate";
   }
 
   if (filters.status && filters.status !== "ALL") {
@@ -50,8 +41,59 @@ function buildApprovalsBatchesUrl(filters: LotesFilters) {
       REJECTED: "REJEITADO"
     };
 
-    url.searchParams.set("status", statusMap[filters.status]);
+    params.status = statusMap[filters.status];
   }
 
-  return url.toString();
+  return params;
+}
+
+function normalizeBatch(rawData: unknown, index: number): Lote {
+  const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
+  const id = pickText(payload.id, `lote-${index + 1}`);
+  const batchNumber = pickText(payload.batchNumber, id);
+  const benefitType = payload.benefitType === "SORTEIO" ? "SORTEIO" : "RESGATE";
+  const status = normalizeBatchStatus(payload.status);
+
+  return {
+    id,
+    batchNumber,
+    benefitType,
+    competence: pickText(payload.competence, "-"),
+    scheduledAt: pickText(payload.scheduledAt, ""),
+    status,
+    paymentCount: Number(payload.paymentCount ?? 0),
+    totalAmount: Number(payload.totalAmount ?? 0),
+    approvedCount: Number(payload.approvedCount ?? 0),
+    rejectedCount: Number(payload.rejectedCount ?? 0),
+    pendingCount: Number(payload.pendingCount ?? 0),
+    payments: Array.isArray(payload.payments) ? payload.payments : []
+  };
+}
+
+function normalizeBatchStatus(value: unknown): Lote["status"] {
+  if (value === "APPROVED") {
+    return "APPROVED";
+  }
+
+  if (value === "REJECTED") {
+    return "REJECTED";
+  }
+
+  if (value === "PARTIALLY_APPROVED") {
+    return "PARTIALLY_APPROVED";
+  }
+
+  return "PENDING";
+}
+
+function pickText(value: unknown, fallback: string) {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+
+  if (typeof value === "number") {
+    return String(value);
+  }
+
+  return fallback;
 }

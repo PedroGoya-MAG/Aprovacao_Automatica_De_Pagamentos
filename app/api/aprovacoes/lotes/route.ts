@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { N8nApiError } from "@/lib/n8n-api";
-import { getResumoDashboardServer } from "@/services/dashboard-service";
+import { getLotes } from "@/services/payment-service";
 import { type BenefitType, type PaymentStatus } from "@/types/payments";
 
 export async function GET(request: NextRequest) {
+  const benefitType = request.nextUrl.searchParams.get("benefitType");
+  const status = request.nextUrl.searchParams.get("status");
+
   try {
-    const data = await getResumoDashboardServer({
-      benefitType: normalizeBenefitType(request.nextUrl.searchParams.get("benefitType")),
-      status: normalizeStatus(request.nextUrl.searchParams.get("status")),
-      search: request.nextUrl.searchParams.get("search") ?? undefined
+    const data = await getLotes({
+      benefitType: normalizeBenefitType(benefitType),
+      status: normalizeStatus(status)
     });
 
     return NextResponse.json(data);
@@ -19,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: "Falha ao consultar o resumo da dashboard." },
+      { message: "Nao foi possivel carregar os lotes de pagamentos." },
       { status: 502 }
     );
   }

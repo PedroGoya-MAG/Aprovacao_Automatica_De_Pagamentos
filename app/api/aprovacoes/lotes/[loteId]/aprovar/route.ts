@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApprovalsWebhookBaseUrl } from "@/lib/env";
+import { N8nApiError, n8nPost } from "@/lib/n8n-api";
 
 type ApproveBatchResponse = {
   loteId: string;
@@ -13,22 +13,9 @@ export async function POST(
   { params }: { params: Promise<{ loteId: string }> }
 ) {
   const { loteId } = await params;
-  const targetUrl = `${getApprovalsWebhookBaseUrl().replace(/\/$/, "")}/api/aprovacoes/lotes/${loteId}/aprovar`;
 
   try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json"
-      }
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(null, { status: response.status });
-    }
-
-    const rawData = await response.json();
+    const rawData = await n8nPost<unknown>("approvals", "approve-batch", { loteId });
     const normalized = normalizeApproveBatchResponse(rawData, loteId);
 
     if (!normalized) {
@@ -36,7 +23,11 @@ export async function POST(
     }
 
     return NextResponse.json(normalized);
-  } catch {
+  } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json(null, { status: error.status });
+    }
+
     return NextResponse.json(null, { status: 502 });
   }
 }

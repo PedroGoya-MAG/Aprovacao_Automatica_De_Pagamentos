@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApprovalsWebhookBaseUrl } from "@/lib/env";
+import { N8nApiError, n8nPost } from "@/lib/n8n-api";
 
 type ApprovePaymentResponse = {
   id: string;
@@ -12,22 +12,9 @@ export async function POST(
   { params }: { params: Promise<{ pagamentoId: string }> }
 ) {
   const { pagamentoId } = await params;
-  const targetUrl = `${getApprovalsWebhookBaseUrl().replace(/\/$/, "")}/api/aprovacoes/pagamentos/${pagamentoId}/aprovar`;
 
   try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json"
-      }
-    });
-
-    if (!response.ok) {
-      return NextResponse.json(null, { status: response.status });
-    }
-
-    const rawData = await response.json();
+    const rawData = await n8nPost<unknown>("approvals", "approve-payment", { pagamentoId });
     const normalized = normalizeApproveResponse(rawData, pagamentoId);
 
     if (!normalized) {
@@ -35,7 +22,11 @@ export async function POST(
     }
 
     return NextResponse.json(normalized);
-  } catch {
+  } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json(null, { status: error.status });
+    }
+
     return NextResponse.json(null, { status: 502 });
   }
 }
