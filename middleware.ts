@@ -9,7 +9,8 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/historico") ||
     pathname.startsWith("/visao-mensal") ||
     pathname.startsWith("/tesouraria") ||
-    pathname.startsWith("/api/aprovacoes")
+    pathname.startsWith("/api/aprovacoes") ||
+    pathname.startsWith("/api/historico")
   );
 }
 
@@ -39,7 +40,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/api/aprovacoes")) {
+  if (pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/historico")) {
     return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
   }
 
@@ -49,5 +50,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/historico/:path*", "/visao-mensal/:path*", "/tesouraria/:path*", "/api/aprovacoes/:path*"]
+  matcher: [
+    "/",
+    "/historico/:path*",
+    "/visao-mensal/:path*",
+    "/tesouraria/:path*",
+    "/api/aprovacoes/:path*",
+    "/api/historico/:path*"
+  ]
 };
