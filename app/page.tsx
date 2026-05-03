@@ -29,8 +29,8 @@ export default async function Home({
   }
 
   const [batches, initialSummary] = await Promise.all([
-    getLotes().catch(() => []),
-    getResumoDashboardServer().catch(() => null)
+    getLotes({ status: "PENDING" }).catch(() => []),
+    getResumoDashboardServer({ status: "PENDING" }).catch(() => null)
   ]);
 
   return (

@@ -19,7 +19,8 @@ export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
     return [];
   }
 
-  return data.map((batch, index) => normalizeBatch(batch, index));
+  const normalized = data.map((batch, index) => normalizeBatch(batch, index));
+  return filterOperationalBatches(normalized, filters);
 }
 
 export const paymentService = {
@@ -96,4 +97,22 @@ function pickText(value: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function filterOperationalBatches(batches: Lote[], filters: LotesFilters) {
+  if (filters.status !== "PENDING") {
+    return batches;
+  }
+
+  return batches.filter((batch) => {
+    if ((batch.pendingCount ?? 0) > 0) {
+      return true;
+    }
+
+    if ((batch.payments ?? []).some((payment) => payment.status === "PENDING")) {
+      return true;
+    }
+
+    return batch.status === "PENDING" || batch.status === "PARTIALLY_APPROVED";
+  });
 }
