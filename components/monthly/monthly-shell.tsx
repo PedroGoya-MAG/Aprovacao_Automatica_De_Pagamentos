@@ -1,23 +1,29 @@
 ﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarRange, CircleCheckBig, Clock3, TrendingUp, Wallet } from "lucide-react";
 
 import { BenefitBadge } from "@/components/payments/benefit-badge";
 import { formatCurrency } from "@/lib/formatters";
-import { type HistoricalBatch, type HistoricalPayment, type MonthlySeriesPoint, type SuspicionReasonCode } from "@/types/insights";
+import { getMonthlySeries } from "@/services/monthly-series-service";
+import { getMonthlySummary } from "@/services/monthly-summary-service";
+import { type HistoricalBatch, type HistoricalPayment, type MonthlySeries, type MonthlySeriesPoint, type MonthlyTotals, type SuspicionReasonCode } from "@/types/insights";
 import { type BenefitType } from "@/types/payments";
 
 type MonthlyShellProps = {
   batches: HistoricalBatch[];
   monthOptions: Array<{ value: string; label: string }>;
+  initialSummary: MonthlyTotals;
+  initialSeries: MonthlySeries;
 };
 
 type BenefitFilter = "ALL" | BenefitType;
 
-export function MonthlyShell({ batches, monthOptions }: MonthlyShellProps) {
+export function MonthlyShell({ batches, monthOptions, initialSummary, initialSeries }: MonthlyShellProps) {
   const [selectedMonth, setSelectedMonth] = useState(monthOptions.at(-1)?.value ?? "");
   const [selectedType, setSelectedType] = useState<BenefitFilter>("ALL");
+  const [summary, setSummary] = useState(initialSummary);
+  const [series, setSeries] = useState(initialSeries);
 
   const filteredBatches = useMemo(() => {
     return batches.filter((batch) => batch.scheduledAt.slice(0, 7) === selectedMonth).filter((batch) => selectedType === "ALL" || batch.benefitType === selectedType);
@@ -25,20 +31,69 @@ export function MonthlyShell({ batches, monthOptions }: MonthlyShellProps) {
 
   const payments = filteredBatches.flatMap((batch) => batch.payments);
   const reasons = buildReasonBreakdown(payments);
-  const dailySeries = buildDailySeries(payments);
-  const weeklySeries = buildWeeklySeries(payments);
+  const fallbackDailySeries = buildDailySeries(payments);
+  const fallbackWeeklySeries = buildWeeklySeries(payments);
   const topSuspiciousPayments = payments.filter((payment) => payment.isSuspicious).sort((left, right) => right.grossAmount - left.grossAmount).slice(0, 4);
+  const localSuspiciousCount = payments.filter((payment) => payment.isSuspicious).length;
 
-  const totals = {
-    receivedAmount: payments.reduce((total, payment) => total + payment.grossAmount, 0),
-    receivedCount: payments.length,
-    approvedAmount: payments.filter((payment) => payment.status === "APPROVED").reduce((total, payment) => total + payment.grossAmount, 0),
-    approvedCount: payments.filter((payment) => payment.status === "APPROVED").length,
-    rejectedAmount: payments.filter((payment) => payment.status === "REJECTED").reduce((total, payment) => total + payment.grossAmount, 0),
-    rejectedCount: payments.filter((payment) => payment.status === "REJECTED").length,
-    suspiciousAmount: payments.filter((payment) => payment.isSuspicious).reduce((total, payment) => total + payment.grossAmount, 0),
-    suspiciousCount: payments.filter((payment) => payment.isSuspicious).length
-  };
+  useEffect(() => {
+    let active = true;
+
+    async function loadSummary() {
+      if (!selectedMonth) {
+        return;
+      }
+
+      try {
+        const nextSummary = await getMonthlySummary(selectedMonth, selectedType);
+
+        if (active) {
+          setSummary(nextSummary);
+        }
+      } catch {
+        if (active) {
+          setSummary(initialSummary);
+        }
+      }
+    }
+
+    void loadSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [initialSummary, selectedMonth, selectedType]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadSeries() {
+      if (!selectedMonth) {
+        return;
+      }
+
+      try {
+        const nextSeries = await getMonthlySeries(selectedMonth, selectedType);
+
+        if (active) {
+          setSeries(nextSeries);
+        }
+      } catch {
+        if (active) {
+          setSeries({
+            dailySeries: fallbackDailySeries,
+            weeklySeries: fallbackWeeklySeries
+          });
+        }
+      }
+    }
+
+    void loadSeries();
+
+    return () => {
+      active = false;
+    };
+  }, [fallbackDailySeries, fallbackWeeklySeries, selectedMonth, selectedType]);
 
   return (
     <div className="space-y-6">
@@ -96,10 +151,10 @@ export function MonthlyShell({ batches, monthOptions }: MonthlyShellProps) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <MetricCard label="Total recebido" value={formatCurrency(totals.receivedAmount)} meta={`${totals.receivedCount} pagamento(s)`} icon={Wallet} />
-        <MetricCard label="Total aprovado" value={formatCurrency(totals.approvedAmount)} meta={`${totals.approvedCount} pagamento(s)`} icon={CircleCheckBig} tone="success" />
-        <MetricCard label="Total rejeitado" value={formatCurrency(totals.rejectedAmount)} meta={`${totals.rejectedCount} pagamento(s)`} icon={AlertTriangle} tone="danger" />
-        <MetricCard label="Total suspeito" value={formatCurrency(totals.suspiciousAmount)} meta={`${totals.suspiciousCount} pagamento(s)`} icon={Clock3} tone="warning" />
+        <MetricCard label="Total recebido" value={formatCurrency(summary.totalReceivedAmount)} meta={`${summary.totalReceivedCount} pagamento(s)`} icon={Wallet} />
+        <MetricCard label="Total aprovado" value={formatCurrency(summary.totalApprovedAmount)} meta={`${summary.totalApprovedCount} pagamento(s)`} icon={CircleCheckBig} tone="success" />
+        <MetricCard label="Total rejeitado" value={formatCurrency(summary.totalRejectedAmount)} meta={`${summary.totalRejectedCount} pagamento(s)`} icon={AlertTriangle} tone="danger" />
+        <MetricCard label="Total suspeito" value={formatCurrency(summary.totalSuspiciousAmount)} meta={`${summary.totalSuspiciousCount} pagamento(s)`} icon={Clock3} tone="warning" />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -119,7 +174,7 @@ export function MonthlyShell({ batches, monthOptions }: MonthlyShellProps) {
               </div>
             ) : (
               reasons.map((reason) => {
-                const percent = totals.suspiciousCount > 0 ? Math.max((reason.count / totals.suspiciousCount) * 100, 8) : 0;
+                const percent = localSuspiciousCount > 0 ? Math.max((reason.count / localSuspiciousCount) * 100, 8) : 0;
 
                 return (
                   <div key={reason.reason} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-4">
@@ -169,13 +224,13 @@ export function MonthlyShell({ batches, monthOptions }: MonthlyShellProps) {
         <SeriesPanel
           title="Evolucao por dia"
           subtitle="Quantidade de pagamentos recebidos por dia no mes"
-          points={dailySeries}
+          points={series.dailySeries}
           emptyMessage="Sem movimentos diarios para o recorte selecionado."
         />
         <SeriesPanel
           title="Evolucao por semana"
           subtitle="Quantidade de pagamentos recebidos por semana no mes"
-          points={weeklySeries}
+          points={series.weeklySeries}
           emptyMessage="Sem movimentos semanais para o recorte selecionado."
         />
       </section>

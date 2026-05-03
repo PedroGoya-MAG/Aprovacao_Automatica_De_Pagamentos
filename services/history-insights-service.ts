@@ -10,12 +10,15 @@ import {
 import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
 import {
+  type MonthlySeries,
+  type MonthlyTotals,
   type HistoricalBatch,
   type HistoryBatchOutcome,
   type HistoricalBatchStatus,
   type HistoryProcessingType,
   type HistorySummary
 } from "@/types/insights";
+import { type BenefitType } from "@/types/payments";
 
 export async function getHistoricalBatches() {
   return getHistoricalBatchesDemo();
@@ -34,7 +37,54 @@ export async function getHistoryCompetences() {
 }
 
 export async function getMonthlyOptions() {
-  return getAvailableMonthlyKeys();
+  if (isDemoMode()) {
+    return sortMonthlyOptions(getAvailableMonthlyKeys());
+  }
+
+  const rawData = await n8nGet<unknown>("monthly", "months");
+
+  if (!Array.isArray(rawData)) {
+    return [];
+  }
+
+  return sortMonthlyOptions(
+    rawData.map((option, index) => normalizeMonthlyOption(option, index))
+  );
+}
+
+export async function getMonthlySummaryForView(month: string, benefitType: "ALL" | BenefitType = "ALL"): Promise<MonthlyTotals> {
+  if (isDemoMode()) {
+    return buildMonthlySummaryFromBatches(
+      getHistoricalBatchesDemo()
+        .filter((batch) => batch.scheduledAt.slice(0, 7) === month)
+        .filter((batch) => benefitType === "ALL" || batch.benefitType === benefitType),
+      month
+    );
+  }
+
+  const rawData = await n8nGet<unknown>("monthly", "summary", {
+    month,
+    ...(benefitType !== "ALL" ? { benefitType: benefitType === "SORTEIO" ? "Sorteio" : "Resgate" } : {})
+  });
+
+  return normalizeMonthlySummary(rawData, month);
+}
+
+export async function getMonthlySeriesForView(month: string, benefitType: "ALL" | BenefitType = "ALL"): Promise<MonthlySeries> {
+  if (isDemoMode()) {
+    return buildMonthlySeriesFromBatches(
+      getHistoricalBatchesDemo()
+        .filter((batch) => batch.scheduledAt.slice(0, 7) === month)
+        .filter((batch) => benefitType === "ALL" || batch.benefitType === benefitType)
+    );
+  }
+
+  const rawData = await n8nGet<unknown>("monthly", "series", {
+    month,
+    ...(benefitType !== "ALL" ? { benefitType: benefitType === "SORTEIO" ? "Sorteio" : "Resgate" } : {})
+  });
+
+  return normalizeMonthlySeries(rawData);
 }
 
 const getHistoricalBatchesForHistoryData = cache(async () => {
@@ -199,6 +249,130 @@ function normalizeHistorySummary(rawData: unknown): HistorySummary {
     totalApprovedAmount: Number(payload.totalApprovedAmount ?? 0),
     totalRejectedAmount: Number(payload.totalRejectedAmount ?? 0)
   };
+}
+
+function normalizeMonthlySummary(rawData: unknown, month: string): MonthlyTotals {
+  const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
+
+  return {
+    month: pickText(payload.month, month),
+    monthLabel: pickText(payload.monthLabel, month),
+    totalReceivedAmount: Number(payload.totalReceivedAmount ?? 0),
+    totalReceivedCount: Number(payload.totalReceivedCount ?? 0),
+    totalApprovedAmount: Number(payload.totalApprovedAmount ?? 0),
+    totalApprovedCount: Number(payload.totalApprovedCount ?? 0),
+    totalRejectedAmount: Number(payload.totalRejectedAmount ?? 0),
+    totalRejectedCount: Number(payload.totalRejectedCount ?? 0),
+    totalSuspiciousAmount: Number(payload.totalSuspiciousAmount ?? 0),
+    totalSuspiciousCount: Number(payload.totalSuspiciousCount ?? 0)
+  };
+}
+
+function buildMonthlySummaryFromBatches(batches: HistoricalBatch[], month: string): MonthlyTotals {
+  const payments = batches.flatMap((batch) => batch.payments);
+
+  return {
+    month,
+    monthLabel: getAvailableMonthlyKeys().find((option) => option.value === month)?.label ?? month,
+    totalReceivedAmount: payments.reduce((total, payment) => total + payment.grossAmount, 0),
+    totalReceivedCount: payments.length,
+    totalApprovedAmount: payments
+      .filter((payment) => payment.status === "APPROVED")
+      .reduce((total, payment) => total + payment.grossAmount, 0),
+    totalApprovedCount: payments.filter((payment) => payment.status === "APPROVED").length,
+    totalRejectedAmount: payments
+      .filter((payment) => payment.status === "REJECTED")
+      .reduce((total, payment) => total + payment.grossAmount, 0),
+    totalRejectedCount: payments.filter((payment) => payment.status === "REJECTED").length,
+    totalSuspiciousAmount: payments
+      .filter((payment) => payment.isSuspicious)
+      .reduce((total, payment) => total + payment.grossAmount, 0),
+    totalSuspiciousCount: payments.filter((payment) => payment.isSuspicious).length
+  };
+}
+
+function normalizeMonthlySeries(rawData: unknown): MonthlySeries {
+  const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
+
+  return {
+    dailySeries: normalizeSeriesPoints(payload.dailySeries),
+    weeklySeries: normalizeSeriesPoints(payload.weeklySeries)
+  };
+}
+
+function normalizeSeriesPoints(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((point) => {
+    const payload = typeof point === "object" && point !== null ? (point as Record<string, unknown>) : {};
+
+    return {
+      label: pickText(payload.label, "-"),
+      count: Number(payload.count ?? 0),
+      amount: Number(payload.amount ?? 0)
+    };
+  });
+}
+
+function buildMonthlySeriesFromBatches(batches: HistoricalBatch[]): MonthlySeries {
+  const payments = batches.flatMap((batch) => batch.payments);
+
+  return {
+    dailySeries: aggregateMonthlySeries(
+      payments,
+      (payment) => payment.paymentDate,
+      (value) => {
+        const [, month, day] = value.split("-");
+        return `${day}/${month}`;
+      }
+    ),
+    weeklySeries: aggregateMonthlySeries(
+      payments,
+      (payment) => {
+        const date = new Date(`${payment.paymentDate}T12:00:00`);
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        const weekIndex = Math.floor((date.getDate() + firstDay.getDay() - 1) / 7) + 1;
+        return `${date.getFullYear()}-${date.getMonth() + 1}-S${weekIndex}`;
+      },
+      (value) => `Semana ${value.split("S")[1]}`
+    )
+  };
+}
+
+function normalizeMonthlyOption(rawData: unknown, index: number) {
+  const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
+  const value = pickText(payload.value, `month-${index + 1}`);
+
+  return {
+    value,
+    label: pickText(payload.label, value)
+  };
+}
+
+function sortMonthlyOptions(options: Array<{ value: string; label: string }>) {
+  return [...options].sort((left, right) => left.value.localeCompare(right.value));
+}
+
+function aggregateMonthlySeries(
+  payments: HistoricalBatch["payments"],
+  getKey: (payment: HistoricalBatch["payments"][number]) => string,
+  getLabel: (key: string) => string
+) {
+  const aggregated = new Map<string, { label: string; count: number; amount: number }>();
+
+  payments.forEach((payment) => {
+    const key = getKey(payment);
+    const current = aggregated.get(key) ?? { label: getLabel(key), count: 0, amount: 0 };
+    current.count += 1;
+    current.amount += payment.grossAmount;
+    aggregated.set(key, current);
+  });
+
+  return Array.from(aggregated.entries())
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([, point]) => point);
 }
 
 function pickText(value: unknown, fallback: string) {

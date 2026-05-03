@@ -82,6 +82,11 @@ export type MonthlySeriesPoint = {
   amount: number;
 };
 
+export type MonthlySeries = {
+  dailySeries: MonthlySeriesPoint[];
+  weeklySeries: MonthlySeriesPoint[];
+};
+
 export type MonthlyOverview = {
   totals: MonthlyTotals;
   reasons: MonthlyReasonBreakdown[];
