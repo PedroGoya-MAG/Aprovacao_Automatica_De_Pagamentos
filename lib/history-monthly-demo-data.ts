@@ -317,6 +317,7 @@ export function summarizeHistoricalBatches(batches: HistoricalBatch[]): HistoryS
     processedPaymentCount: payments.length,
     approvedPaymentCount: payments.filter((payment) => payment.status === "APPROVED").length,
     rejectedPaymentCount: payments.filter((payment) => payment.status === "REJECTED").length,
+    pendingPaymentCount: payments.filter((payment) => payment.status === "PENDING").length,
     suspiciousPaymentCount: payments.filter((payment) => payment.isSuspicious).length,
     processedTotalAmount: payments.reduce((total, payment) => total + payment.grossAmount, 0),
     totalApprovedAmount: payments.filter((payment) => payment.status === "APPROVED").reduce((total, payment) => total + payment.grossAmount, 0),
@@ -332,6 +333,8 @@ function buildHistoricalBatch(seed: BatchSeed): HistoricalBatch {
   const approvedAmount = payments.filter((payment) => payment.status === "APPROVED").reduce((total, payment) => total + payment.grossAmount, 0);
   const rejectedAmount = payments.filter((payment) => payment.status === "REJECTED").reduce((total, payment) => total + payment.grossAmount, 0);
   const batchOutcome = getHistoryBatchOutcome(approvedCount, rejectedCount, pendingCount);
+  const totalAmount = payments.reduce((total, payment) => total + payment.grossAmount, 0);
+  const hasSuspiciousPayments = payments.some((payment) => payment.isSuspicious);
 
   return {
     id: seed.id,
@@ -340,16 +343,31 @@ function buildHistoricalBatch(seed: BatchSeed): HistoricalBatch {
     competence: seed.competence,
     scheduledAt: seed.scheduledAt,
     processedAt: seed.processedAt,
-    status: pendingCount > 0 ? "PENDING" : rejectedCount > 0 && approvedCount === 0 ? "REJECTED" : "APPROVED",
+    status:
+      batchOutcome === "MIXED"
+        ? "PARTIALLY_APPROVED"
+        : pendingCount > 0
+          ? "PENDING"
+          : rejectedCount > 0 && approvedCount === 0
+            ? "REJECTED"
+            : "APPROVED",
     batchOutcome,
     paymentCount: payments.length,
-    totalAmount: payments.reduce((total, payment) => total + payment.grossAmount, 0),
+    totalAmount,
     approvedAmount,
     rejectedAmount,
     approvedCount,
     rejectedCount,
     pendingCount,
-    payments
+    payments,
+    hasSuspiciousPayments,
+    processingType: "MANUAL",
+    processingSummary: {
+      manualCount: payments.length,
+      automaticCount: 0,
+      manualAmount: totalAmount,
+      automaticAmount: 0
+    }
   };
 }
 
@@ -367,6 +385,8 @@ function buildHistoricalPayment(seed: BatchSeed, payment: BatchSeed["payments"][
     reference: payment.reference,
     observations: payment.observations,
     processedAt: seed.processedAt,
+    processingType: "MANUAL",
+    rejectionReason: payment.status === "REJECTED" ? payment.observations ?? null : null,
     isSuspicious: (payment.suspicionReasons ?? []).length > 0,
     suspicionReasons: payment.suspicionReasons ?? []
   };

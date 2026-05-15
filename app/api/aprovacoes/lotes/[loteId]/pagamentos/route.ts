@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApprovalsWebhookBaseUrl } from "@/lib/env";
+import { N8nApiError, n8nGet } from "@/lib/n8n-api";
 import { type Payment } from "@/types/payments";
 
 export async function GET(
@@ -8,24 +8,15 @@ export async function GET(
   { params }: { params: Promise<{ loteId: string }> }
 ) {
   const { loteId } = await params;
-  const targetUrl = `${getApprovalsWebhookBaseUrl().replace(/\/$/, "")}/api/aprovacoes/lotes/${loteId}/pagamentos`;
 
   try {
-    const response = await fetch(targetUrl, {
-      method: "GET",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json"
-      }
-    });
-
-    if (!response.ok) {
-      return NextResponse.json([], { status: response.status });
+    const rawData = await n8nGet<unknown>("approvals", "batch-payments", { loteId });
+    return NextResponse.json(normalizePayments(rawData, loteId));
+  } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json([], { status: error.status });
     }
 
-    const rawData = await response.json();
-    return NextResponse.json(normalizePayments(rawData, loteId));
-  } catch {
     return NextResponse.json([], { status: 502 });
   }
 }

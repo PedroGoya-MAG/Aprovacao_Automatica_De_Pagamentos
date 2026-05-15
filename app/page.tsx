@@ -19,20 +19,18 @@ export default async function Home({
   }
 
   if (code) {
-    const callbackUrl = new URL("/api/auth/callback", "http://localhost");
-
-    callbackUrl.searchParams.set("code", code);
+    const callbackParams = new URLSearchParams({ code });
 
     if (state) {
-      callbackUrl.searchParams.set("state", state);
+      callbackParams.set("state", state);
     }
 
-    redirect(`${callbackUrl.pathname}${callbackUrl.search}` as Route);
+    redirect(`/api/auth/callback?${callbackParams.toString()}` as Route);
   }
 
   const [batches, initialSummary] = await Promise.all([
-    getLotes().catch(() => []),
-    getResumoDashboardServer().catch(() => null)
+    getLotes({ status: "PENDING" }).catch(() => []),
+    getResumoDashboardServer({ status: "PENDING" }).catch(() => null)
   ]);
 
   return (

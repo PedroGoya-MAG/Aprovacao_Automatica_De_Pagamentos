@@ -1,5 +1,5 @@
 import { getDemoResumoDashboard } from "@/lib/demo-data";
-import { getApprovalsSummaryUrl } from "@/lib/env";
+import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
@@ -32,26 +32,7 @@ export async function getResumoDashboardServer(filters: DashboardSummaryFilters 
     return getDemoResumoDashboard(filters);
   }
 
-  const targetUrl = new URL(getApprovalsSummaryUrl());
-  const searchParams = new URLSearchParams(buildSummaryQuery(filters).replace(/^\?/, ""));
-
-  searchParams.forEach((value, key) => {
-    targetUrl.searchParams.set(key, value);
-  });
-
-  const response = await fetch(targetUrl.toString(), {
-    method: "GET",
-    cache: "no-store",
-    headers: {
-      Accept: "application/json"
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error("Nao foi possivel carregar o resumo da dashboard.");
-  }
-
-  return (await response.json()) as ResumoDashboard;
+  return n8nGet<ResumoDashboard>("approvals", "summary", buildSummaryParams(filters));
 }
 
 function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
@@ -76,4 +57,28 @@ function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   }
 
   return searchParams.size > 0 ? `?${searchParams.toString()}` : "";
+}
+
+function buildSummaryParams(filters: DashboardSummaryFilters = {}) {
+  const params: Record<string, string> = {};
+
+  if (filters.benefitType && filters.benefitType !== "ALL") {
+    params.benefitType = filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate";
+  }
+
+  if (filters.status && filters.status !== "ALL") {
+    const statusMap: Record<PaymentStatus, string> = {
+      PENDING: "PENDENTE",
+      APPROVED: "APROVADO",
+      REJECTED: "REJEITADO"
+    };
+
+    params.status = statusMap[filters.status];
+  }
+
+  if (filters.search?.trim()) {
+    params.search = filters.search.trim();
+  }
+
+  return params;
 }

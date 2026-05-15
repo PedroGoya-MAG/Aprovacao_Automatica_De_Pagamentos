@@ -2,18 +2,30 @@
 
 export type SuspicionReasonCode = "HIGH_VALUE" | "DUPLICATE_BENEFICIARY" | "SINGLE_CONCENTRATION" | "DOUBLE_CONCENTRATION";
 export type HistoryBatchOutcome = "APPROVED" | "REJECTED" | "MIXED" | "PENDING";
+export type HistoricalBatchStatus = "PENDING" | "APPROVED" | "REJECTED" | "PARTIALLY_APPROVED";
+export type HistoryProcessingType = "MANUAL" | "AUTOMATICA" | "MIXED";
+export type HistoryPaymentProcessingType = "MANUAL" | "AUTOMATIC";
+
+export type HistoricalProcessingSummary = {
+  manualCount: number;
+  automaticCount: number;
+  manualAmount: number;
+  automaticAmount: number;
+};
 
 export type HistoricalPayment = Omit<Payment, "loteId" | "benefitType" | "batchNumber"> & {
   loteId: string;
   benefitType: BenefitType;
   batchNumber: string;
-  processedAt: string;
+  processedAt: string | null;
+  processingType: HistoryPaymentProcessingType;
+  rejectionReason?: string | null;
   isSuspicious: boolean;
   suspicionReasons: SuspicionReasonCode[];
 };
 
 export type HistoricalBatch = Omit<PaymentBatch, "status" | "paymentCount" | "totalAmount" | "approvedCount" | "rejectedCount" | "pendingCount" | "payments"> & {
-  status: PaymentStatus;
+  status: HistoricalBatchStatus;
   batchOutcome: HistoryBatchOutcome;
   paymentCount: number;
   totalAmount: number;
@@ -24,6 +36,9 @@ export type HistoricalBatch = Omit<PaymentBatch, "status" | "paymentCount" | "to
   pendingCount: number;
   payments: HistoricalPayment[];
   processedAt: string;
+  hasSuspiciousPayments: boolean;
+  processingType: HistoryProcessingType;
+  processingSummary: HistoricalProcessingSummary;
 };
 
 export type HistorySummary = {
@@ -35,6 +50,7 @@ export type HistorySummary = {
   processedPaymentCount: number;
   approvedPaymentCount: number;
   rejectedPaymentCount: number;
+  pendingPaymentCount: number;
   suspiciousPaymentCount: number;
   processedTotalAmount: number;
   totalApprovedAmount: number;
@@ -64,6 +80,11 @@ export type MonthlySeriesPoint = {
   label: string;
   count: number;
   amount: number;
+};
+
+export type MonthlySeries = {
+  dailySeries: MonthlySeriesPoint[];
+  weeklySeries: MonthlySeriesPoint[];
 };
 
 export type MonthlyOverview = {
