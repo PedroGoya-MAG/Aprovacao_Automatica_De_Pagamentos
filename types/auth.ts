@@ -10,6 +10,8 @@ export interface AuthTokenPayload extends Record<string, unknown> {
   nbf?: number;
 }
 
+export type PermissionLevel = "ADMIN" | "BENEFICIO" | "TESOURARIA";
+
 export interface OAuthTokenResponse {
   access_token: string;
   token_type?: string;
@@ -28,7 +30,7 @@ export interface AuthenticatedSession {
     name: string;
     email?: string;
     scopes: string[];
-    permissionLevel: "ADMIN";
+    permissionLevel: PermissionLevel;
     roleCandidates: string[];
     claims: AuthTokenPayload;
   };

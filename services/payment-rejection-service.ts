@@ -6,14 +6,21 @@ export type RejectPaymentResult = {
   status: "REJECTED";
 };
 
-export async function rejectPaymentById(pagamentoId: string | number): Promise<RejectPaymentResult> {
+export async function rejectPaymentById(
+  pagamentoId: string | number,
+  motivo?: string
+): Promise<RejectPaymentResult> {
   if (isDemoMode()) {
     return getDemoRejectPaymentResult(pagamentoId);
   }
 
   const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}/rejeitar`, {
     method: "POST",
-    cache: "no-store"
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(motivo ? { motivo } : {})
   });
 
   if (!response.ok) {

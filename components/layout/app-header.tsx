@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Building2, CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
 
+import { canAccessTab, formatPermissionLabel } from "@/lib/auth/access";
 import { getServerSession } from "@/lib/auth/session";
 
 type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
@@ -53,6 +54,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const activeContent = activeDescriptions[activeTab];
   const session = await getServerSession();
+  const visibleNavItems = session ? navItems.filter((item) => canAccessTab(session.user.permissionLevel, item.value)) : navItems;
 
   return (
     <header className="overflow-hidden border-b border-[color:var(--border)] bg-white">
@@ -78,6 +80,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
             <span className="data-chip">Uso corporativo</span>
             <span className="data-chip">Fluxo operacional</span>
             {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
+            {session ? <span className="data-chip">{formatPermissionLabel(session.user.permissionLevel)}</span> : null}
             {session ? <span className="data-chip">{session.user.name}</span> : null}
             {session ? (
               <a
@@ -102,7 +105,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
 
             <nav aria-label="Navegacao principal do portal" className="border-b border-[color:var(--border)]">
               <ul className="flex flex-wrap items-center gap-1 sm:gap-4">
-                {navItems.map((item) => {
+                {visibleNavItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = item.value === activeTab;
 
