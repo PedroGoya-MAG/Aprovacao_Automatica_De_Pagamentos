@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getApprovalsWebhookBaseUrl } from "@/lib/env";
+import { N8nApiError, n8nPost } from "@/lib/n8n-api";
 
 type ApproveSelectedResponse = {
   loteId: string;
@@ -14,34 +14,25 @@ export async function POST(
 ) {
   const { loteId } = await params;
 
-  let payload: { paymentIds: Array<string | number> };
+  let payload: { paymentIds?: Array<string | number>; pagamentosIds?: Array<string | number> };
 
   try {
-    payload = (await request.json()) as { paymentIds: Array<string | number> };
+    payload = (await request.json()) as { paymentIds?: Array<string | number>; pagamentosIds?: Array<string | number> };
   } catch {
     return NextResponse.json(null, { status: 400 });
   }
 
-  const targetUrl = `${getApprovalsWebhookBaseUrl().replace(/\/$/, "")}/api/aprovacoes/lotes/${loteId}/aprovar-selecionados`;
+  const paymentIds = Array.isArray(payload.paymentIds)
+    ? payload.paymentIds
+    : Array.isArray(payload.pagamentosIds)
+      ? payload.pagamentosIds
+      : [];
 
   try {
-    const response = await fetch(targetUrl, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        paymentIds: Array.isArray(payload.paymentIds) ? payload.paymentIds : []
-      })
+    const rawData = await n8nPost<unknown>("approvals", "approve-selected", {
+      loteId,
+      paymentIds
     });
-
-    if (!response.ok) {
-      return NextResponse.json(null, { status: response.status });
-    }
-
-    const rawData = await response.json();
     const normalized = normalizeApproveSelectedResponse(rawData, loteId);
 
     if (!normalized) {
@@ -49,7 +40,11 @@ export async function POST(
     }
 
     return NextResponse.json(normalized);
-  } catch {
+  } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json(null, { status: error.status });
+    }
+
     return NextResponse.json(null, { status: 502 });
   }
 }

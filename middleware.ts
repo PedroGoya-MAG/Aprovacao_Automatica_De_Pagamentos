@@ -64,5 +64,13 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/historico/:path*", "/visao-mensal/:path*", "/tesouraria/:path*", "/api/aprovacoes/:path*", "/api/historico/:path*", "/api/visao-mensal/:path*"]
+  matcher: [
+    "/",
+    "/historico/:path*",
+    "/visao-mensal/:path*",
+    "/tesouraria/:path*",
+    "/api/aprovacoes/:path*",
+    "/api/historico/:path*",
+    "/api/visao-mensal/:path*"
+  ]
 };

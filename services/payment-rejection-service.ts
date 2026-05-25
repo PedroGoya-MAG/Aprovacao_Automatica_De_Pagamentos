@@ -21,6 +21,7 @@ export async function rejectPaymentById(
       "Content-Type": "application/json"
     },
     body: JSON.stringify(motivo ? { motivo } : {})
+
   });
 
   if (!response.ok) {

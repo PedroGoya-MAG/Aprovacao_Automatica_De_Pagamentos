@@ -1,12 +1,16 @@
 import { AppHeader } from "@/components/layout/app-header";
 import { HistoryShell } from "@/components/history/history-shell";
-import { getHistoricalBatches, getHistoricalSummary, getHistoryCompetences } from "@/services/history-insights-service";
+import {
+  getHistoricalBatchesForHistory,
+  getHistoricalSummaryForHistory,
+  getHistoryCompetencesForHistory
+} from "@/services/history-insights-service";
 
 export default async function HistoricoPage() {
   const [batches, summary, competences] = await Promise.all([
-    getHistoricalBatches(),
-    getHistoricalSummary(),
-    getHistoryCompetences()
+    getHistoricalBatchesForHistory(),
+    getHistoricalSummaryForHistory(),
+    getHistoryCompetencesForHistory()
   ]);
 
   return (

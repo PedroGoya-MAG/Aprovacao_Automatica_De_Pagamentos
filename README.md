@@ -38,6 +38,7 @@ Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido c
 |       |-- skeleton.tsx
 |       `-- toast-stack.tsx
 |-- lib
+|   |-- n8n-api.ts
 |   |-- formatters.ts
 |   `-- utils.ts
 |-- public
@@ -64,7 +65,8 @@ Front-end corporativo para aprovacao de pagamentos de beneficios, desenvolvido c
 ## Arquivos principais
 
 - `app/page.tsx`: carrega lotes e resumo iniciais no servidor.
-- `app/api/aprovacoes/*`: proxies do Next.js para os webhooks do backend.
+- `app/api/aprovacoes/*`: proxies do Next.js para o roteador central do n8n.
+- `lib/n8n-api.ts`: camada centralizada para montar e executar chamadas GET e POST no n8n.
 - `components/payments/dashboard-shell.tsx`: dashboard principal, cards, tabela de pagamentos, drawer e acoes.
 - `services/payment-service.ts`: listagem principal de lotes.
 - `services/dashboard-service.ts`: resumo da dashboard no client e no server.
@@ -113,30 +115,40 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 ## Variaveis de ambiente
 
 - NEXT_PUBLIC_PORTAL_TITLE: titulo exibido no cabecalho.
-- NEXT_PUBLIC_DEMO_MODE: quando 	rue, usa dados locais de demonstracao e nao depende da VPN.
+- NEXT_PUBLIC_DEMO_MODE: quando `true`, usa dados locais de demonstracao e nao depende da VPN.
 - `NEXT_PUBLIC_APP_ENV`: ambiente exibido ou utilizado pelo projeto, se necessario.
-- `NEXT_PUBLIC_APPROVALS_SUMMARY_URL`: endpoint publico do resumo.
-- `APPROVALS_SUMMARY_URL`: endpoint server-side do resumo.
-- `NEXT_PUBLIC_APPROVALS_BATCHES_URL`: endpoint publico da listagem de lotes.
-- `APPROVALS_BATCHES_URL`: endpoint server-side da listagem de lotes.
-- `NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL`: base publica dos endpoints de pagamentos e acoes.
-- `APPROVALS_WEBHOOK_BASE_URL`: base server-side dos endpoints de pagamentos e acoes.
+- `NEXT_PUBLIC_N8N_API_URL`: endpoint unico do roteador central do n8n.
 - API_AUTH_TOKEN: token server-side opcional para autenticacao futura.
 
-Essas variaveis sao obrigatorias fora do modo demonstracao. Os base paths dos endpoints nao ficam hardcoded no codigo.
+Fora do modo demonstracao, a tela de aprovacoes usa o roteador central do n8n e envia `screen` e `action` para diferenciar cada operacao.
 
 ### Exemplo
 
 ```env
 NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_APPROVALS_SUMMARY_URL=
-APPROVALS_SUMMARY_URL=
-NEXT_PUBLIC_APPROVALS_BATCHES_URL=
-APPROVALS_BATCHES_URL=
-NEXT_PUBLIC_APPROVALS_WEBHOOK_BASE_URL=
-APPROVALS_WEBHOOK_BASE_URL=
+NEXT_PUBLIC_N8N_API_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
 API_AUTH_TOKEN=
+```
+
+### Padrao de chamadas do n8n
+
+GET:
+
+```http
+GET {NEXT_PUBLIC_N8N_API_URL}?screen=approvals&action=summary
+GET {NEXT_PUBLIC_N8N_API_URL}?screen=approvals&action=batch-payments&loteId=LOT-RES-20131002
+```
+
+POST:
+
+```json
+{
+  "screen": "approvals",
+  "action": "reject-payment",
+  "pagamentoId": 1094,
+  "motivo": "Documento divergente"
+}
 ```
 
 ## Deploy na Vercel

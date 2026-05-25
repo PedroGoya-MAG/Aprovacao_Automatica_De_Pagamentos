@@ -21,6 +21,7 @@ import { StatusBadge } from "@/components/payments/status-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatCurrency, formatDate, formatDocument } from "@/lib/formatters";
+import { getHistoricalPaymentsByBatch } from "@/services/history-payments-service";
 import { normalizeText } from "@/lib/utils";
 import {
   type HistoricalBatch,
@@ -58,6 +59,7 @@ const paymentStatusOrder: Record<PaymentStatus, number> = {
 };
 
 export function HistoryShell({ initialBatches, initialSummary, competences }: HistoryShellProps) {
+  const [batches, setBatches] = useState(initialBatches);
   const [selectedCompetence, setSelectedCompetence] = useState<string>("ALL");
   const [selectedType, setSelectedType] = useState<BenefitFilter>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("ALL");
@@ -66,22 +68,26 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
   const [showOnlySuspicious, setShowOnlySuspicious] = useState(false);
   const [showOnlyRejected, setShowOnlyRejected] = useState(false);
   const [expandedBatches, setExpandedBatches] = useState<Record<string, boolean>>({});
+  const [loadingBatchPayments, setLoadingBatchPayments] = useState<Record<string, boolean>>({});
+  const [loadedBatchPayments, setLoadedBatchPayments] = useState<Record<string, boolean>>({});
   const [activePayment, setActivePayment] = useState<ActivePaymentState>(null);
 
   const normalizedSearch = normalizeText(search);
 
   const visibleBatches = useMemo<VisibleHistoricalBatch[]>(() => {
-    return initialBatches
+    return batches
       .filter((batch) => selectedCompetence === "ALL" || batch.competence === selectedCompetence)
       .filter((batch) => selectedType === "ALL" || batch.benefitType === selectedType)
       .filter((batch) => selectedOutcome === "ALL" || batch.batchOutcome === selectedOutcome)
       .map((batch) => {
+        const hasLoadedPayments = batch.payments.length > 0;
         const batchMatchesSearch =
           normalizedSearch.length === 0 ||
           normalizeText(batch.batchNumber).includes(normalizedSearch) ||
           normalizeText(batch.id).includes(normalizedSearch);
 
-        const visiblePayments = [...batch.payments]
+        const visiblePayments = hasLoadedPayments
+          ? [...batch.payments]
           .filter((payment) => {
             const matchesStatus = selectedStatus === "ALL" || payment.status === selectedStatus;
             const matchesSearch =
@@ -100,33 +106,52 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
               return statusDelta;
             }
             return left.paymentDate.localeCompare(right.paymentDate);
-          });
+          })
+          : [];
+
+        const aggregateMatchesStatus = selectedStatus === "ALL" || batchMatchesStatus(batch, selectedStatus);
+        const aggregateMatchesSuspicious = !showOnlySuspicious || batch.hasSuspiciousPayments;
+        const aggregateMatchesRejected = !showOnlyRejected || batch.rejectedCount > 0;
+        const shouldShowBatch = hasLoadedPayments
+          ? batchMatchesSearch || visiblePayments.length > 0
+          : aggregateMatchesStatus &&
+            aggregateMatchesSuspicious &&
+            aggregateMatchesRejected &&
+            (normalizedSearch.length === 0 || batchMatchesSearch);
 
         return {
           ...batch,
           visiblePayments,
-          shouldShowBatch: batchMatchesSearch || visiblePayments.length > 0
+          shouldShowBatch
         };
       })
       .filter((batch) => batch.shouldShowBatch);
-  }, [initialBatches, normalizedSearch, selectedCompetence, selectedOutcome, selectedStatus, selectedType, showOnlyRejected, showOnlySuspicious]);
+  }, [batches, normalizedSearch, selectedCompetence, selectedOutcome, selectedStatus, selectedType, showOnlyRejected, showOnlySuspicious]);
 
   const dynamicSummary = useMemo<HistorySummary>(() => {
-    const payments = visibleBatches.flatMap((batch) => batch.visiblePayments);
-
     return {
       processedBatchCount: visibleBatches.length,
       approvedBatchCount: visibleBatches.filter((batch) => batch.batchOutcome === "APPROVED").length,
       rejectedBatchCount: visibleBatches.filter((batch) => batch.batchOutcome === "REJECTED").length,
       mixedBatchCount: visibleBatches.filter((batch) => batch.batchOutcome === "MIXED").length,
       pendingBatchCount: visibleBatches.filter((batch) => batch.batchOutcome === "PENDING").length,
-      processedPaymentCount: payments.length,
-      approvedPaymentCount: payments.filter((payment) => payment.status === "APPROVED").length,
-      rejectedPaymentCount: payments.filter((payment) => payment.status === "REJECTED").length,
-      suspiciousPaymentCount: payments.filter((payment) => payment.isSuspicious).length,
-      processedTotalAmount: payments.reduce((total, payment) => total + payment.grossAmount, 0),
-      totalApprovedAmount: payments.filter((payment) => payment.status === "APPROVED").reduce((total, payment) => total + payment.grossAmount, 0),
-      totalRejectedAmount: payments.filter((payment) => payment.status === "REJECTED").reduce((total, payment) => total + payment.grossAmount, 0)
+      processedPaymentCount: visibleBatches.reduce((total, batch) => total + batch.paymentCount, 0),
+      approvedPaymentCount: visibleBatches.reduce((total, batch) => total + batch.approvedCount, 0),
+      rejectedPaymentCount: visibleBatches.reduce((total, batch) => total + batch.rejectedCount, 0),
+      pendingPaymentCount: visibleBatches.reduce((total, batch) => total + batch.pendingCount, 0),
+      suspiciousPaymentCount: visibleBatches.reduce(
+        (total, batch) =>
+          total +
+          (batch.payments.length > 0
+            ? batch.payments.filter((payment) => payment.isSuspicious).length
+            : batch.hasSuspiciousPayments
+              ? 1
+              : 0),
+        0
+      ),
+      processedTotalAmount: visibleBatches.reduce((total, batch) => total + batch.totalAmount, 0),
+      totalApprovedAmount: visibleBatches.reduce((total, batch) => total + batch.approvedAmount, 0),
+      totalRejectedAmount: visibleBatches.reduce((total, batch) => total + batch.rejectedAmount, 0)
     };
   }, [visibleBatches]);
 
@@ -142,6 +167,57 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
   const summary = hasActiveFilters ? dynamicSummary : initialSummary;
   const activeBatch = activePayment ? visibleBatches.find((batch) => batch.id === activePayment.batchId) : undefined;
   const currentPayment = activePayment ? activeBatch?.payments.find((payment) => payment.id === activePayment.paymentId) : undefined;
+
+  async function toggleBatch(batchId: string) {
+    const isOpening = !(expandedBatches[batchId] ?? false);
+
+    if (isOpening) {
+      await loadBatchPayments(batchId);
+    }
+
+    setExpandedBatches((current) => ({
+      ...current,
+      [batchId]: !current[batchId]
+    }));
+  }
+
+  async function loadBatchPayments(batchId: string) {
+    const batch = batches.find((item) => item.id === batchId);
+
+    if (!batch || batch.payments.length > 0 || loadedBatchPayments[batchId] || loadingBatchPayments[batchId]) {
+      return;
+    }
+
+    setLoadingBatchPayments((current) => ({
+      ...current,
+      [batchId]: true
+    }));
+
+    try {
+      const payments = await getHistoricalPaymentsByBatch(batchId);
+
+      setBatches((current) =>
+        current.map((item) =>
+          item.id === batchId
+            ? {
+                ...item,
+                payments
+              }
+            : item
+        )
+      );
+
+      setLoadedBatchPayments((current) => ({
+        ...current,
+        [batchId]: true
+      }));
+    } finally {
+      setLoadingBatchPayments((current) => ({
+        ...current,
+        [batchId]: false
+      }));
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -253,7 +329,8 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
                       <BatchInfo label="Competencia" value={batch.competence} />
                       <BatchInfo label="Data prevista" value={formatDate(batch.scheduledAt)} />
-                      <BatchInfo label="Processado em" value={formatDate(batch.processedAt.slice(0, 10))} />
+                      <BatchInfo label="Processado em" value={batch.processedAt ? formatDate(batch.processedAt.slice(0, 10)) : "-"} />
+                      <BatchInfo label="Processamento" value={formatProcessingType(batch.processingType)} />
                       <BatchInfo label="Pagamentos" value={String(batch.paymentCount)} />
                       <BatchInfo label="Valor total" value={formatCurrency(batch.totalAmount)} />
                       <BatchInfo label="Valor aprovado" value={formatCurrency(batch.approvedAmount)} />
@@ -262,11 +339,13 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
 
                     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600">
                       <BatchOutcomeInline batch={batch} />
+                      <span className="data-chip">Manual: {batch.processingSummary.manualCount}</span>
+                      <span className="data-chip">Automatica: {batch.processingSummary.automaticCount}</span>
                     </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-3">
-                    <Button type="button" variant="secondary" onClick={() => setExpandedBatches((current) => ({ ...current, [batch.id]: !current[batch.id] }))}>
+                    <Button type="button" variant="secondary" onClick={() => void toggleBatch(batch.id)}>
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                       {isExpanded ? "Ocultar pagamentos" : "Ver pagamentos"}
                     </Button>
@@ -275,6 +354,15 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
 
                 {isExpanded ? (
                   <div className="border-t border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-5 sm:px-6">
+                    {loadingBatchPayments[batch.id] ? (
+                      <div className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-5 text-sm leading-6 text-slate-600">
+                        Carregando pagamentos do lote...
+                      </div>
+                    ) : batch.payments.length === 0 ? (
+                      <div className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-5 text-sm leading-6 text-slate-600">
+                        Nenhum pagamento foi retornado para este lote historico.
+                      </div>
+                    ) : (
                     <div className="overflow-x-auto rounded-xl border border-[color:var(--border)] bg-white">
                       <table className="min-w-full border-collapse">
                         <thead>
@@ -319,6 +407,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                         </tbody>
                       </table>
                     </div>
+                    )}
                   </div>
                 ) : null}
               </article>
@@ -420,6 +509,30 @@ function BatchOutcomeInline({ batch }: { batch: HistoricalBatch }) {
   );
 }
 
+function batchMatchesStatus(batch: HistoricalBatch, status: PaymentStatus) {
+  if (status === "APPROVED") {
+    return batch.approvedCount > 0;
+  }
+
+  if (status === "REJECTED") {
+    return batch.rejectedCount > 0;
+  }
+
+  return batch.pendingCount > 0;
+}
+
+function formatProcessingType(processingType: HistoricalBatch["processingType"]) {
+  if (processingType === "MANUAL") {
+    return "Manual";
+  }
+
+  if (processingType === "AUTOMATICA") {
+    return "Automatica";
+  }
+
+  return "Mista";
+}
+
 function OutcomeChip({ children, tone }: { children: React.ReactNode; tone: "success" | "danger" | "warning" | "mixed" }) {
   const toneClass =
     tone === "success"
@@ -471,7 +584,8 @@ function HistoryPaymentDrawer({ batch, payment, onClose }: { batch?: VisibleHist
           <DetailGridItem icon={ShieldAlert} label="Lote" value={batch.batchNumber} />
           <DetailGridItem icon={ShieldAlert} label="Competencia" value={batch.competence} />
           <DetailGridItem icon={CalendarClock} label="Data do pagamento" value={formatDate(payment.paymentDate)} />
-          <DetailGridItem icon={CalendarClock} label="Processado em" value={formatDate(payment.processedAt.slice(0, 10))} />
+          <DetailGridItem icon={CalendarClock} label="Processado em" value={payment.processedAt ? formatDate(payment.processedAt.slice(0, 10)) : "-"} />
+          <DetailGridItem icon={ShieldAlert} label="Tipo de processamento" value={payment.processingType === "MANUAL" ? "Manual" : "Automatico"} />
 
           <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Motivo da rejeicao</p>
@@ -516,7 +630,7 @@ function getRejectionReason(payment: HistoricalPayment) {
     return "-";
   }
 
-  return payment.observations?.trim() || "Motivo nao informado no historico.";
+  return payment.rejectionReason?.trim() || payment.observations?.trim() || "Motivo nao informado no historico.";
 }
 
 function formatReasonLabel(reason: SuspicionReasonCode) {

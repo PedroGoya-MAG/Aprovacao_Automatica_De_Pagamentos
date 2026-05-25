@@ -3,10 +3,15 @@ function readEnv(key: string) {
 }
 
 export function getAppBaseUrl() {
-  return (readEnv("AUTH_APP_BASE_URL") || readEnv("NEXT_PUBLIC_APP_URL") || "http://localhost:3000").replace(
-    /\/$/,
-    ""
-  );
+  const value = readEnv("AUTH_APP_BASE_URL") || readEnv("NEXT_PUBLIC_APP_URL");
+
+  if (!value) {
+    throw new Error(
+      "Variavel de ambiente obrigatoria nao configurada: AUTH_APP_BASE_URL ou NEXT_PUBLIC_APP_URL."
+    );
+  }
+
+  return value.replace(/\/$/, "");
 }
 
 export function isAuthEnabled() {
