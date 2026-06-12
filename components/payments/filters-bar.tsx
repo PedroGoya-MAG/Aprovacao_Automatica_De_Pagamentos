@@ -11,6 +11,7 @@ type FiltersBarProps = {
   filterStatus: "ALL" | PaymentStatus;
   search: string;
   totalResults: number;
+  readOnly: boolean;
   canApproveAll: boolean;
   processingAllVisible: boolean;
   onApproveAll: () => void;
@@ -38,6 +39,7 @@ export function FiltersBar({
   filterStatus,
   search,
   totalResults,
+  readOnly,
   canApproveAll,
   processingAllVisible,
   onApproveAll,
@@ -67,10 +69,14 @@ export function FiltersBar({
               <X className="h-4 w-4" />Limpar filtros
             </Button>
           ) : null}
-          <Button type="button" variant="primary" size="sm" className="min-w-[164px] rounded-lg shadow-none" disabled={!canApproveAll || processingAllVisible} onClick={onApproveAll}>
-            <CircleCheckBig className="h-4 w-4" />
-            {processingAllVisible ? "Aprovando lotes..." : "Aprovar tudo"}
-          </Button>
+          {readOnly ? (
+            <span className="data-chip">Perfil somente leitura</span>
+          ) : (
+            <Button type="button" variant="primary" size="sm" className="min-w-[164px] rounded-lg shadow-none" disabled={!canApproveAll || processingAllVisible} onClick={onApproveAll}>
+              <CircleCheckBig className="h-4 w-4" />
+              {processingAllVisible ? "Aprovando lotes..." : "Aprovar tudo"}
+            </Button>
+          )}
         </div>
       </div>
 

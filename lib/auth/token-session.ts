@@ -1,3 +1,4 @@
+import { extractAuthorizedScopes, resolveTemporaryPermissionLevel } from "@/lib/auth/access";
 import { decodeJwtPayload, extractClaimStrings, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
 import { type AuthenticatedSession } from "@/types/auth";
 
@@ -24,10 +25,11 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
     (nameParts.length > 0 ? nameParts.join(" ") : "") ||
     email ||
     (typeof payload.sub === "string" ? payload.sub : "Usuario MAG");
-  const scopes = extractScopeValues(payload);
+  const scopes = Array.from(new Set([...extractScopeValues(payload), ...extractAuthorizedScopes(payload)]));
   const roleCandidates = extractClaimStrings(payload, ["role", "roles", "perfil", "profile", "groups"]);
+  const permissionLevel = resolveTemporaryPermissionLevel(payload, scopes);
 
-  if (!scopes.includes("dash.beneficio")) {
+  if (!permissionLevel) {
     return null;
   }
 
@@ -40,7 +42,7 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
       name,
       email,
       scopes,
-      permissionLevel: "ADMIN",
+      permissionLevel,
       roleCandidates,
       claims: payload
     }

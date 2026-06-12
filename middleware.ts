@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { canAccessPath, getDefaultRouteForPermission } from "@/lib/auth/access";
 import { isAuthEnabled } from "@/lib/auth/config";
 import { AUTH_ACCESS_TOKEN_COOKIE, resolveSessionFromAccessToken } from "@/lib/auth/token-session";
 
@@ -38,6 +39,18 @@ export function middleware(request: NextRequest) {
   const session = accessToken ? resolveSessionFromAccessToken(accessToken) : null;
 
   if (session) {
+    if (!canAccessPath(session.user.permissionLevel, pathname)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ message: "Acesso negado para este perfil." }, { status: 403 });
+      }
+
+      return NextResponse.redirect(new URL(getDefaultRouteForPermission(session.user.permissionLevel), request.url));
+    }
+
+    if (pathname.startsWith("/api/aprovacoes") && request.method !== "GET" && session.user.permissionLevel !== "ADMIN") {
+      return NextResponse.json({ message: "Perfil sem permissao para alterar aprovacoes." }, { status: 403 });
+    }
+
     return NextResponse.next();
   }
 

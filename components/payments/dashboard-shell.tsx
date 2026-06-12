@@ -35,11 +35,13 @@ import { approvePaymentById } from "@/services/payment-approval-service";
 import { rejectPaymentById } from "@/services/payment-rejection-service";
 import { approveSelectedPayments } from "@/services/batch-selected-approval-service";
 import { approveBatch } from "@/services/batch-approval-service";
+import { type PermissionLevel } from "@/types/auth";
 import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
 type DashboardShellProps = {
   initialBatches: PaymentBatch[];
   initialSummary: ResumoDashboard | null;
+  permissionLevel?: PermissionLevel;
 };
 
 type BenefitFilterOption = "ALL" | BenefitType;
@@ -112,7 +114,7 @@ const emptyBatchAlert: BatchAlert = {
 
 let toastCounter = 0;
 
-export function DashboardShell({ initialBatches, initialSummary }: DashboardShellProps) {
+export function DashboardShell({ initialBatches, initialSummary, permissionLevel }: DashboardShellProps) {
   const [batches, setBatches] = useState(initialBatches);
   const [filterType, setFilterType] = useState<BenefitFilterOption>("ALL");
   const [filterStatus, setFilterStatus] = useState<StatusFilterOption>("ALL");
@@ -145,6 +147,8 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   const [rejectionDraft, setRejectionDraft] = useState<RejectionDraft>(null);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = normalizeText(deferredSearch);
+  const isReadOnly = permissionLevel === "BENEFICIO";
+  const canManageApprovals = !isReadOnly && permissionLevel !== "TESOURARIA";
 
   function notify(title: string, description: string, tone: ToastItem["tone"]) {
     const id = toastCounter++;
@@ -154,6 +158,10 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
     window.setTimeout(() => {
       setToasts((current) => current.filter((toast) => toast.id !== id));
     }, 3400);
+  }
+
+  function notifyReadOnly() {
+    notify("Perfil somente leitura", "Seu perfil permite consultar os dados, mas nao executar aprovacoes ou rejeicoes.", "info");
   }
 
   useEffect(() => {
@@ -283,6 +291,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   async function handleApprovePayment(batchId: string, paymentId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     if (processingPaymentId === paymentId) {
       return;
     }
@@ -300,6 +313,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   async function handleRejectPayment(batchId: string, paymentId: string, reason?: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     if (processingPaymentId === paymentId) {
       return;
     }
@@ -318,6 +336,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   async function handleApproveBatch(batchId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     if (processingBatchId === batchId) {
       return;
     }
@@ -340,6 +363,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   async function handleApproveSelected(batchId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     const paymentIds = Array.from(new Set(selectedByBatch[batchId] ?? []));
     const hasSelectedSuspicious = paymentIds.some((paymentId) => {
       const alert = suspicionAnalysis.paymentMap[paymentId];
@@ -368,6 +396,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   async function handleApproveAllVisible() {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     if (hasUnresolvedSuspicion) {
       notify("Aprovacao total bloqueada", "Essa acao so e liberada quando todos os pagamentos suspeitos pendentes forem revisados ou tratados.", "warning");
       return;
@@ -625,6 +658,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   function toggleSelection(batchId: string, paymentId: string, checked: boolean) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     setSelectedByBatch((current) => {
       const existing = current[batchId] ?? [];
       const nextSelection = checked ? Array.from(new Set([...existing, paymentId])) : existing.filter((id) => id !== paymentId);
@@ -633,6 +671,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   function toggleAllSelections(batchId: string, paymentIds: string[], checked: boolean) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     setSelectedByBatch((current) => {
       const existing = new Set(current[batchId] ?? []);
       if (checked) {
@@ -645,6 +688,11 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   function toggleReviewed(paymentId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     const paymentAlert = suspicionAnalysis.paymentMap[paymentId];
     if (!paymentAlert?.isSuspicious) {
       return;
@@ -672,7 +720,21 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
   }
 
   function openRejectModal(batchId: string, paymentId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
     setRejectionDraft({ batchId, paymentId, reason: rejectionReasonsById[paymentId] ?? "" });
+  }
+
+  function handleRestorePayment(batchId: string, paymentId: string) {
+    if (!canManageApprovals) {
+      notifyReadOnly();
+      return;
+    }
+
+    updatePaymentStatus(batchId, paymentId, "PENDING");
   }
 
   return (
@@ -693,6 +755,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
           reviewedSuspiciousIds={reviewedSuspiciousIds}
           processingPaymentId={processingPaymentId}
           processingBatchId={processingBatchId}
+          canManageApprovals={canManageApprovals}
           onApproveBatch={(batchId) => void handleApproveBatch(batchId)}
           onApproveSelected={(batchId) => void handleApproveSelected(batchId)}
           onExpandToggle={(batchId) => toggleExpanded(batchId)}
@@ -700,7 +763,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
           onPaymentSelectionChange={toggleSelection}
           onPaymentApprove={(batchId, paymentId) => void handleApprovePayment(batchId, paymentId)}
           onPaymentReject={(batchId, paymentId) => openRejectModal(batchId, paymentId)}
-          onPaymentRestore={(batchId, paymentId) => updatePaymentStatus(batchId, paymentId, "PENDING")}
+          onPaymentRestore={(batchId, paymentId) => handleRestorePayment(batchId, paymentId)}
           onShowDetails={(batchId, paymentId) => void handleShowDetails(batchId, paymentId)}
           onToggleReviewed={toggleReviewed}
         />
@@ -710,9 +773,14 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
         filterType={filterType}
         filterStatus={filterStatus}
         search={search}
+        readOnly={isReadOnly}
         canApproveAll={canApproveAllVisible}
         processingAllVisible={processingAllVisible}
         onApproveAll={() => {
+          if (!canManageApprovals) {
+            notifyReadOnly();
+            return;
+          }
           if (hasUnresolvedSuspicion) {
             notify("Aprovacao total bloqueada", "Essa acao so e liberada quando os pagamentos suspeitos forem revisados ou tratados.", "warning");
             return;
@@ -769,6 +837,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
                 hasLoadedPayments={loadedBatchPayments[batch.id] ?? false}
                 alertMap={suspicionAnalysis.paymentMap}
                 reviewedSuspiciousIds={reviewedSuspiciousIds}
+                canManageApprovals={canManageApprovals}
                 onApproveBatch={() => void handleApproveBatch(batch.id)}
                 onApproveSelected={() => void handleApproveSelected(batch.id)}
                 onExpandToggle={() => toggleExpanded(batch.id)}
@@ -776,7 +845,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
                 onPaymentSelectionChange={toggleSelection}
                 onPaymentApprove={(paymentId) => void handleApprovePayment(batch.id, paymentId)}
                 onPaymentReject={(paymentId) => openRejectModal(batch.id, paymentId)}
-                onPaymentRestore={(paymentId) => updatePaymentStatus(batch.id, paymentId, "PENDING")}
+                onPaymentRestore={(paymentId) => handleRestorePayment(batch.id, paymentId)}
                 onShowDetails={(paymentId) => void handleShowDetails(batch.id, paymentId)}
                 onToggleReviewed={toggleReviewed}
                 processingPaymentId={processingPaymentId}
@@ -796,6 +865,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
         isReviewed={activePayment ? Boolean(reviewedSuspiciousIds[activePayment.paymentId]) : false}
         isLoading={loadingPaymentDetails}
         processingPaymentId={processingPaymentId}
+        canManageApprovals={canManageApprovals}
         onClose={() => setActivePayment(null)}
         onApprove={() => {
           if (!activePayment) return;
@@ -807,7 +877,7 @@ export function DashboardShell({ initialBatches, initialSummary }: DashboardShel
         }}
         onRestore={() => {
           if (!activePayment) return;
-          updatePaymentStatus(activePayment.batchId, activePayment.paymentId, "PENDING");
+          handleRestorePayment(activePayment.batchId, activePayment.paymentId);
         }}
         onToggleReviewed={() => {
           if (!activePayment) return;
@@ -983,6 +1053,7 @@ function PendingSuspiciousQueue(props: {
   reviewedSuspiciousIds: Record<string, boolean>;
   processingPaymentId: string | null;
   processingBatchId: string | null;
+  canManageApprovals: boolean;
   onApproveBatch: (batchId: string) => void;
   onApproveSelected: (batchId: string) => void;
   onExpandToggle: (batchId: string) => void;
@@ -1004,6 +1075,7 @@ function PendingSuspiciousQueue(props: {
     reviewedSuspiciousIds,
     processingPaymentId,
     processingBatchId,
+    canManageApprovals,
     onApproveBatch,
     onApproveSelected,
     onExpandToggle,
@@ -1042,6 +1114,7 @@ function PendingSuspiciousQueue(props: {
             hasLoadedPayments={loadedBatchPayments[batch.id] ?? false}
             alertMap={alertMap}
             reviewedSuspiciousIds={reviewedSuspiciousIds}
+            canManageApprovals={canManageApprovals}
             onApproveBatch={() => onApproveBatch(batch.id)}
             onApproveSelected={() => onApproveSelected(batch.id)}
             onExpandToggle={() => onExpandToggle(batch.id)}
@@ -1069,6 +1142,7 @@ type BatchCardProps = {
   hasLoadedPayments: boolean;
   alertMap: Record<string, PaymentAlert>;
   reviewedSuspiciousIds: Record<string, boolean>;
+  canManageApprovals: boolean;
   onApproveBatch: () => void;
   onApproveSelected: () => void;
   onExpandToggle: () => void;
@@ -1084,7 +1158,7 @@ type BatchCardProps = {
 };
 
 function BatchCard(props: BatchCardProps) {
-  const { batch, selectedIds, isExpanded, isLoadingPayments, hasLoadedPayments, alertMap, reviewedSuspiciousIds, onApproveBatch, onApproveSelected, onExpandToggle, onToggleAllSelections, onPaymentSelectionChange, onPaymentApprove, onPaymentReject, onPaymentRestore, onShowDetails, onToggleReviewed, processingPaymentId, processingBatchId } = props;
+  const { batch, selectedIds, isExpanded, isLoadingPayments, hasLoadedPayments, alertMap, reviewedSuspiciousIds, canManageApprovals, onApproveBatch, onApproveSelected, onExpandToggle, onToggleAllSelections, onPaymentSelectionChange, onPaymentApprove, onPaymentReject, onPaymentRestore, onShowDetails, onToggleReviewed, processingPaymentId, processingBatchId } = props;
   const batchPayments = batch.payments ?? [];
   const paymentCount = batch.paymentCount ?? batchPayments.length;
   const pendingCount = batch.pendingCount ?? batchPayments.filter((payment) => payment.status === "PENDING").length;
@@ -1093,9 +1167,9 @@ function BatchCard(props: BatchCardProps) {
   const selectedCount = batchPayments.filter((payment) => selectedIds.includes(payment.id) && payment.status === "PENDING").length;
   const totalValue = batch.totalAmount ?? batchPayments.reduce((total, payment) => total + payment.grossAmount, 0);
   const hasSuspiciousPending = batch.alert.unresolvedSuspiciousCount > 0;
-  const actionDisabled = pendingCount === 0 || processingBatchId === batch.id || hasSuspiciousPending;
+  const actionDisabled = !canManageApprovals || pendingCount === 0 || processingBatchId === batch.id || hasSuspiciousPending;
 
-  return <article className={cn("panel relative overflow-hidden rounded-xl border-2", hasSuspiciousPending ? (batch.alert.severity === "critical" ? "border-rose-300" : "border-amber-300") : "border-[color:var(--border)]")}><div className={cn("absolute inset-x-0 top-0 h-1.5", batch.benefitType === "SORTEIO" ? "bg-[color:var(--brand)]" : "bg-emerald-600")} /><div className="flex flex-col gap-5 px-5 py-5 sm:px-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"><div className="space-y-4"><div className="flex flex-wrap items-center gap-3"><BenefitBadge benefitType={batch.benefitType} /><BatchProcessingBadge pendingCount={pendingCount} approvedCount={approvedCount} rejectedCount={rejectedCount} />{batch.alert.totalSuspiciousCount > 0 ? <SuspiciousFlagBadge severity={batch.alert.severity ?? "warning"} label={`${batch.alert.totalSuspiciousCount} suspeito(s)`} /> : null}</div><div className="space-y-2"><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Identificador do lote</p><h3 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{batch.batchNumber}</h3><p className="text-sm text-slate-600">{formatBenefitType(batch.benefitType)} com {paymentCount} pagamento(s), programado para {formatDate(batch.scheduledAt)}.</p></div></div><div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col"><Button type="button" variant="primary" disabled={actionDisabled} onClick={onApproveBatch}>Aprovar lote</Button><Button type="button" variant="secondary" onClick={onExpandToggle}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{isExpanded ? "Ocultar detalhes" : "Expandir detalhes"}</Button></div></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${paymentCount}`} /><MetricPill icon={CircleDollarSign} label="Valor total do lote" value={formatCurrency(totalValue)} /><MetricPill icon={CalendarDays} label="Status do lote" value={describeBatchProcessing(pendingCount, approvedCount, rejectedCount)} /><MetricPill icon={CircleCheckBig} label="Selecionados para aprovacao" value={`${selectedCount}`} /></div><div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600"><BenefitBadge benefitType={batch.benefitType} /><span className="data-chip">Competencia: {batch.competence}</span><span className="data-chip">Pendentes: {pendingCount}</span><span className="data-chip">Aprovados: {approvedCount}</span><span className="data-chip">Rejeitados: {rejectedCount}</span>{batch.alert.totalSuspiciousCount > 0 ? <span className="data-chip">Suspeitos: {batch.alert.totalSuspiciousCount}</span> : null}</div>{hasSuspiciousPending ? <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Este lote possui pagamentos suspeitos pendentes de revisao. Trate os itens sinalizados antes de liberar aprovacao ampla.</div> : null}{isExpanded ? (isLoadingPayments ? <LoadingBatchPayments /> : batch.hasPaymentDetails ? <PaymentList batchId={batch.id} batchPayments={batchPayments} payments={batch.visiblePayments} totalPayments={paymentCount} selectedIds={selectedIds} alertMap={alertMap} reviewedSuspiciousIds={reviewedSuspiciousIds} onApproveSelected={onApproveSelected} onToggleAllSelections={onToggleAllSelections} onPaymentSelectionChange={onPaymentSelectionChange} onPaymentApprove={onPaymentApprove} onPaymentReject={onPaymentReject} onPaymentRestore={onPaymentRestore} onShowDetails={onShowDetails} onToggleReviewed={onToggleReviewed} processingPaymentId={processingPaymentId} isProcessingBatch={processingBatchId === batch.id} /> : hasLoadedPayments ? <EmptyBatchPayments batchNumber={batch.batchNumber} /> : <UnavailablePaymentDetails />) : null}</div></article>;
+  return <article className={cn("panel relative overflow-hidden rounded-xl border-2", hasSuspiciousPending ? (batch.alert.severity === "critical" ? "border-rose-300" : "border-amber-300") : "border-[color:var(--border)]")}><div className={cn("absolute inset-x-0 top-0 h-1.5", batch.benefitType === "SORTEIO" ? "bg-[color:var(--brand)]" : "bg-emerald-600")} /><div className="flex flex-col gap-5 px-5 py-5 sm:px-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"><div className="space-y-4"><div className="flex flex-wrap items-center gap-3"><BenefitBadge benefitType={batch.benefitType} /><BatchProcessingBadge pendingCount={pendingCount} approvedCount={approvedCount} rejectedCount={rejectedCount} />{batch.alert.totalSuspiciousCount > 0 ? <SuspiciousFlagBadge severity={batch.alert.severity ?? "warning"} label={`${batch.alert.totalSuspiciousCount} suspeito(s)`} /> : null}</div><div className="space-y-2"><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Identificador do lote</p><h3 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{batch.batchNumber}</h3><p className="text-sm text-slate-600">{formatBenefitType(batch.benefitType)} com {paymentCount} pagamento(s), programado para {formatDate(batch.scheduledAt)}.</p></div></div><div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">{canManageApprovals ? <Button type="button" variant="primary" disabled={actionDisabled} onClick={onApproveBatch}>Aprovar lote</Button> : null}<Button type="button" variant="secondary" onClick={onExpandToggle}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{isExpanded ? "Ocultar detalhes" : "Expandir detalhes"}</Button></div></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${paymentCount}`} /><MetricPill icon={CircleDollarSign} label="Valor total do lote" value={formatCurrency(totalValue)} /><MetricPill icon={CalendarDays} label="Status do lote" value={describeBatchProcessing(pendingCount, approvedCount, rejectedCount)} /><MetricPill icon={CircleCheckBig} label="Selecionados para aprovacao" value={`${selectedCount}`} /></div><div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600"><BenefitBadge benefitType={batch.benefitType} /><span className="data-chip">Competencia: {batch.competence}</span><span className="data-chip">Pendentes: {pendingCount}</span><span className="data-chip">Aprovados: {approvedCount}</span><span className="data-chip">Rejeitados: {rejectedCount}</span>{batch.alert.totalSuspiciousCount > 0 ? <span className="data-chip">Suspeitos: {batch.alert.totalSuspiciousCount}</span> : null}</div>{hasSuspiciousPending ? <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Este lote possui pagamentos suspeitos pendentes de revisao. Trate os itens sinalizados antes de liberar aprovacao ampla.</div> : null}{isExpanded ? (isLoadingPayments ? <LoadingBatchPayments /> : batch.hasPaymentDetails ? <PaymentList batchId={batch.id} batchPayments={batchPayments} payments={batch.visiblePayments} totalPayments={paymentCount} selectedIds={selectedIds} alertMap={alertMap} reviewedSuspiciousIds={reviewedSuspiciousIds} canManageApprovals={canManageApprovals} onApproveSelected={onApproveSelected} onToggleAllSelections={onToggleAllSelections} onPaymentSelectionChange={onPaymentSelectionChange} onPaymentApprove={onPaymentApprove} onPaymentReject={onPaymentReject} onPaymentRestore={onPaymentRestore} onShowDetails={onShowDetails} onToggleReviewed={onToggleReviewed} processingPaymentId={processingPaymentId} isProcessingBatch={processingBatchId === batch.id} /> : hasLoadedPayments ? <EmptyBatchPayments batchNumber={batch.batchNumber} /> : <UnavailablePaymentDetails />) : null}</div></article>;
 }
 
 function UnavailablePaymentDetails() { return <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600"><p className="section-title">Detalhes do lote</p><p>Expanda o lote para carregar os pagamentos diretamente da API e preencher esta area em tempo real.</p></div>; }
@@ -1107,20 +1181,413 @@ function BatchProcessingBadge({ pendingCount, approvedCount, rejectedCount }: { 
 
 function describeBatchProcessing(pendingCount: number, approvedCount: number, rejectedCount: number) { if (pendingCount === 0 && rejectedCount === 0 && approvedCount > 0) return "Lote aprovado"; if (pendingCount === 0 && approvedCount === 0 && rejectedCount > 0) return "Lote rejeitado"; const parts: string[] = []; if (rejectedCount > 0) parts.push(`${rejectedCount} rejeitado(s)`); if (approvedCount > 0) parts.push(`${approvedCount} aprovado(s)`); if (pendingCount > 0) parts.push(`${pendingCount} pendente(s)`); return parts.join(" • "); }
 
-function PaymentList(props: { batchId: string; batchPayments: Payment[]; payments: Payment[]; totalPayments: number; selectedIds: string[]; alertMap: Record<string, PaymentAlert>; reviewedSuspiciousIds: Record<string, boolean>; onApproveSelected: () => void; onToggleAllSelections: (batchId: string, paymentIds: string[], checked: boolean) => void; onPaymentSelectionChange: (batchId: string, paymentId: string, checked: boolean) => void; onPaymentApprove: (paymentId: string) => void; onPaymentReject: (paymentId: string) => void; onPaymentRestore: (paymentId: string) => void; onShowDetails: (paymentId: string) => void; onToggleReviewed: (paymentId: string) => void; processingPaymentId: string | null; isProcessingBatch: boolean; }) {
-  const { batchId, batchPayments, payments, totalPayments, selectedIds, alertMap, reviewedSuspiciousIds, onApproveSelected, onToggleAllSelections, onPaymentSelectionChange, onPaymentApprove, onPaymentReject, onPaymentRestore, onShowDetails, onToggleReviewed, processingPaymentId, isProcessingBatch } = props;
-  const visiblePendingIds = payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id);
-  const selectedPending = payments.filter((payment) => payment.status === "PENDING" && selectedIds.includes(payment.id)).length;
-  const unresolvedSuspiciousSelected = batchPayments.filter((payment) => { const alert = alertMap[payment.id]; return payment.status === "PENDING" && selectedIds.includes(payment.id) && alert?.isSuspicious && !alert.isResolved; }).length;
-  const allVisiblePendingSelected = visiblePendingIds.length > 0 && visiblePendingIds.every((paymentId) => selectedIds.includes(paymentId));
+function PaymentList(props: {
+  batchId: string;
+  batchPayments: Payment[];
+  payments: Payment[];
+  totalPayments: number;
+  selectedIds: string[];
+  alertMap: Record<string, PaymentAlert>;
+  reviewedSuspiciousIds: Record<string, boolean>;
+  canManageApprovals: boolean;
+  onApproveSelected: () => void;
+  onToggleAllSelections: (batchId: string, paymentIds: string[], checked: boolean) => void;
+  onPaymentSelectionChange: (batchId: string, paymentId: string, checked: boolean) => void;
+  onPaymentApprove: (paymentId: string) => void;
+  onPaymentReject: (paymentId: string) => void;
+  onPaymentRestore: (paymentId: string) => void;
+  onShowDetails: (paymentId: string) => void;
+  onToggleReviewed: (paymentId: string) => void;
+  processingPaymentId: string | null;
+  isProcessingBatch: boolean;
+}) {
+  const {
+    batchId,
+    batchPayments,
+    payments,
+    totalPayments,
+    selectedIds,
+    alertMap,
+    reviewedSuspiciousIds,
+    canManageApprovals,
+    onApproveSelected,
+    onToggleAllSelections,
+    onPaymentSelectionChange,
+    onPaymentApprove,
+    onPaymentReject,
+    onPaymentRestore,
+    onShowDetails,
+    onToggleReviewed,
+    processingPaymentId,
+    isProcessingBatch
+  } = props;
 
-  return <div className="sub-panel overflow-hidden rounded-xl"><div className="flex flex-col gap-4 border-b border-[color:var(--border)] px-5 py-4 lg:flex-row lg:items-center lg:justify-between"><div><p className="section-title">Pagamentos do lote</p><p className="mt-1 text-sm text-slate-600">Exibindo {payments.length} de {totalPayments} pagamento(s).</p></div><Button type="button" variant="success" disabled={selectedPending === 0 || isProcessingBatch || unresolvedSuspiciousSelected > 0} onClick={onApproveSelected}>Aprovar selecionados</Button></div><div className="flex flex-col gap-4 border-b border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4"><label className="flex items-center gap-3 text-sm font-medium text-slate-700"><input type="checkbox" checked={allVisiblePendingSelected} disabled={visiblePendingIds.length === 0} onChange={(event) => onToggleAllSelections(batchId, visiblePendingIds, event.target.checked)} className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand)] focus:ring-[color:var(--brand)]" />Selecionar todos os pagamentos pendentes visiveis</label>{unresolvedSuspiciousSelected > 0 ? <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /><p>Pagamentos suspeitos nao revisados nao entram na aprovacao em lote.</p></div> : null}</div><div className="overflow-x-auto"><table className="min-w-full border-separate border-spacing-0"><thead className="bg-[color:var(--surface-muted)]"><tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500"><th className="px-5 py-4">Selecionar</th><th className="px-4 py-4">Beneficiario</th><th className="px-4 py-4">Documento</th><th className="px-4 py-4">Valor bruto</th><th className="px-4 py-4">Data pagamento</th><th className="px-4 py-4">Status</th><th className="px-4 py-4">Risco</th><th className="px-4 py-4">Acoes</th></tr></thead><tbody>{payments.map((payment) => { const isPending = payment.status === "PENDING"; const isSelected = selectedIds.includes(payment.id); const paymentAlert = alertMap[payment.id]; const isSuspicious = Boolean(paymentAlert?.isSuspicious); const isReviewed = Boolean(reviewedSuspiciousIds[payment.id]) || Boolean(paymentAlert?.isResolved); return <tr key={payment.id} className={cn("border-t border-[color:var(--border)] transition-colors hover:bg-slate-50", isSuspicious && paymentAlert?.severity === "critical" && "bg-rose-50/70", isSuspicious && paymentAlert?.severity === "warning" && "bg-amber-50/70", !isSuspicious && isSelected && isPending && "bg-sky-50/70")}><td className="px-5 py-4"><input type="checkbox" checked={isPending && isSelected} disabled={!isPending} onChange={(event) => onPaymentSelectionChange(batchId, payment.id, event.target.checked)} className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand)] focus:ring-[color:var(--brand)]" /></td><td className="px-4 py-4"><div className="min-w-[220px]"><div className="flex flex-wrap items-center gap-2"><p className="font-semibold text-slate-900">{payment.beneficiaryName}</p>{isSuspicious ? <SuspiciousFlagBadge severity={paymentAlert?.severity ?? "warning"} label="Suspeito" /> : null}{isSuspicious && isReviewed ? <ReviewBadge /> : null}</div><p className="text-sm text-slate-500">{payment.reference}</p></div></td><td className="px-4 py-4 text-sm text-slate-600">{formatDocument(payment.document)}</td><td className="px-4 py-4 text-sm font-semibold text-slate-900">{formatCurrency(payment.grossAmount)}</td><td className="px-4 py-4 text-sm text-slate-600">{formatDate(payment.paymentDate)}</td><td className="px-4 py-4"><StatusBadge status={payment.status} /></td><td className="px-4 py-4">{isSuspicious ? <div className="space-y-2"><p className="text-xs leading-5 text-slate-700">{paymentAlert?.reasons.map(formatSuspicionReason).join(" • ")}</p>{payment.status === "PENDING" ? <Button type="button" variant={isReviewed ? "secondary" : "secondary"} size="sm" className={cn("min-h-10 min-w-[148px] justify-center whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm", isReviewed ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100" : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200")} onClick={() => onToggleReviewed(payment.id)}>{isReviewed ? "Cancelar revisao" : "Revisar"}</Button> : null}</div> : <span className="text-sm text-slate-500">Sem alerta</span>}</td><td className="px-4 py-4"><div className="flex justify-end gap-2"><Button type="button" variant="ghost" size="sm" onClick={() => onShowDetails(payment.id)}><Eye className="h-4 w-4" />Detalhes</Button>{payment.status === "PENDING" ? <><Button type="button" variant="success" size="sm" disabled={processingPaymentId === payment.id} onClick={() => onPaymentApprove(payment.id)}>Aprovar</Button><Button type="button" variant="danger" size="sm" disabled={processingPaymentId === payment.id} onClick={() => onPaymentReject(payment.id)}><XCircle className="h-4 w-4" />Rejeitar</Button></> : null}{payment.status === "REJECTED" ? <Button type="button" variant="secondary" size="sm" onClick={() => onPaymentRestore(payment.id)}><RotateCcw className="h-4 w-4" />Reativar</Button> : null}</div></td></tr>; })}</tbody></table></div></div>;
+  const visiblePendingIds = payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id);
+  const selectedPending = payments.filter(
+    (payment) => payment.status === "PENDING" && selectedIds.includes(payment.id)
+  ).length;
+  const unresolvedSuspiciousSelected = batchPayments.filter((payment) => {
+    const alert = alertMap[payment.id];
+    return payment.status === "PENDING" && selectedIds.includes(payment.id) && alert?.isSuspicious && !alert.isResolved;
+  }).length;
+  const allVisiblePendingSelected =
+    visiblePendingIds.length > 0 && visiblePendingIds.every((paymentId) => selectedIds.includes(paymentId));
+
+  return (
+    <div className="sub-panel overflow-hidden rounded-xl">
+      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="section-title">Pagamentos do lote</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Exibindo {payments.length} de {totalPayments} pagamento(s).
+          </p>
+        </div>
+
+        {canManageApprovals ? (
+          <Button
+            type="button"
+            variant="success"
+            disabled={selectedPending === 0 || isProcessingBatch || unresolvedSuspiciousSelected > 0}
+            onClick={onApproveSelected}
+          >
+            Aprovar selecionados
+          </Button>
+        ) : (
+          <span className="data-chip">Somente leitura</span>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">
+        <label className="flex items-center gap-3 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            checked={allVisiblePendingSelected}
+            disabled={!canManageApprovals || visiblePendingIds.length === 0}
+            onChange={(event) => onToggleAllSelections(batchId, visiblePendingIds, event.target.checked)}
+            className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand)] focus:ring-[color:var(--brand)]"
+          />
+          Selecionar todos os pagamentos pendentes visiveis
+        </label>
+
+        {unresolvedSuspiciousSelected > 0 ? (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>Pagamentos suspeitos nao revisados nao entram na aprovacao em lote.</p>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-separate border-spacing-0">
+          <thead className="bg-[color:var(--surface-muted)]">
+            <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              <th className="px-5 py-4">Selecionar</th>
+              <th className="px-4 py-4">Beneficiario</th>
+              <th className="px-4 py-4">Documento</th>
+              <th className="px-4 py-4">Valor bruto</th>
+              <th className="px-4 py-4">Data pagamento</th>
+              <th className="px-4 py-4">Status</th>
+              <th className="px-4 py-4">Risco</th>
+              <th className="px-4 py-4">Acoes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((payment) => {
+              const isPending = payment.status === "PENDING";
+              const isSelected = selectedIds.includes(payment.id);
+              const paymentAlert = alertMap[payment.id];
+              const isSuspicious = Boolean(paymentAlert?.isSuspicious);
+              const isReviewed = Boolean(reviewedSuspiciousIds[payment.id]) || Boolean(paymentAlert?.isResolved);
+
+              return (
+                <tr
+                  key={payment.id}
+                  className={cn(
+                    "border-t border-[color:var(--border)] transition-colors hover:bg-slate-50",
+                    isSuspicious && paymentAlert?.severity === "critical" && "bg-rose-50/70",
+                    isSuspicious && paymentAlert?.severity === "warning" && "bg-amber-50/70",
+                    !isSuspicious && isSelected && isPending && "bg-sky-50/70"
+                  )}
+                >
+                  <td className="px-5 py-4">
+                    <input
+                      type="checkbox"
+                      checked={isPending && isSelected}
+                      disabled={!canManageApprovals || !isPending}
+                      onChange={(event) => onPaymentSelectionChange(batchId, payment.id, event.target.checked)}
+                      className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand)] focus:ring-[color:var(--brand)]"
+                    />
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="min-w-[220px]">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-slate-900">{payment.beneficiaryName}</p>
+                        {isSuspicious ? (
+                          <SuspiciousFlagBadge severity={paymentAlert?.severity ?? "warning"} label="Suspeito" />
+                        ) : null}
+                        {isSuspicious && isReviewed ? <ReviewBadge /> : null}
+                      </div>
+                      <p className="text-sm text-slate-500">{payment.reference}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4 text-sm text-slate-600">{formatDocument(payment.document)}</td>
+                  <td className="px-4 py-4 text-sm font-semibold text-slate-900">
+                    {formatCurrency(payment.grossAmount)}
+                  </td>
+                  <td className="px-4 py-4 text-sm text-slate-600">{formatDate(payment.paymentDate)}</td>
+                  <td className="px-4 py-4">
+                    <StatusBadge status={payment.status} />
+                  </td>
+                  <td className="px-4 py-4">
+                    {isSuspicious ? (
+                      <div className="space-y-2">
+                        <p className="text-xs leading-5 text-slate-700">
+                          {paymentAlert?.reasons.map(formatSuspicionReason).join(" • ")}
+                        </p>
+                        {payment.status === "PENDING" && canManageApprovals ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className={cn(
+                              "min-h-10 min-w-[148px] justify-center whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm",
+                              isReviewed
+                                ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                                : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200"
+                            )}
+                            onClick={() => onToggleReviewed(payment.id)}
+                          >
+                            {isReviewed ? "Cancelar revisao" : "Revisar"}
+                          </Button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-slate-500">Sem alerta</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-4">
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => onShowDetails(payment.id)}>
+                        <Eye className="h-4 w-4" />
+                        Detalhes
+                      </Button>
+
+                      {canManageApprovals && payment.status === "PENDING" ? (
+                        <>
+                          <Button
+                            type="button"
+                            variant="success"
+                            size="sm"
+                            disabled={processingPaymentId === payment.id}
+                            onClick={() => onPaymentApprove(payment.id)}
+                          >
+                            Aprovar
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="danger"
+                            size="sm"
+                            disabled={processingPaymentId === payment.id}
+                            onClick={() => onPaymentReject(payment.id)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Rejeitar
+                          </Button>
+                        </>
+                      ) : null}
+
+                      {canManageApprovals && payment.status === "REJECTED" ? (
+                        <Button type="button" variant="secondary" size="sm" onClick={() => onPaymentRestore(payment.id)}>
+                          <RotateCcw className="h-4 w-4" />
+                          Reativar
+                        </Button>
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 function RejectionReasonModal({ draft, payment, isSubmitting, onChangeReason, onClose, onConfirm }: { draft: RejectionDraft; payment?: Payment; isSubmitting: boolean; onChangeReason: (reason: string) => void; onClose: () => void; onConfirm: () => void; }) { if (!draft || !payment) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar modal de rejeicao" /><div className="panel relative z-10 w-full max-w-xl px-6 py-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Rejeitar pagamento</p><h3 className="mt-2 text-2xl font-semibold text-slate-950">{payment.beneficiaryName}</h3></div><Button type="button" variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button></div><label className="mt-5 block"><span className="mb-2 block text-sm font-semibold text-slate-800">Motivo da rejeicao</span><textarea value={draft.reason} onChange={(event) => onChangeReason(event.target.value)} rows={5} placeholder="Descreva por que este pagamento esta sendo rejeitado..." className="w-full rounded-lg border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[color:var(--brand)] focus:ring-2 focus:ring-sky-100" /></label><div className="mt-5 flex flex-wrap justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="button" variant="danger" onClick={onConfirm} disabled={isSubmitting}>Confirmar rejeicao</Button></div></div></div>; }
 function ApproveAllConfirmDialog({ isOpen, batchCount, isSubmitting, onClose, onConfirm }: { isOpen: boolean; batchCount: number; isSubmitting: boolean; onClose: () => void; onConfirm: () => void; }) { if (!isOpen) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar confirmacao" /><div className="panel relative z-10 w-full max-w-lg px-6 py-6"><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Confirmar aprovacao</p><h3 className="mt-2 text-2xl font-semibold text-slate-950">Aprovar todos os lotes visiveis</h3><p className="mt-3 text-sm leading-6 text-slate-600">Essa acao realizara a aprovacao de todos os lotes disponiveis em tela. Deseja prosseguir com {batchCount} lote(s)?</p><div className="mt-6 flex flex-wrap justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>Nao</Button><Button type="button" variant="primary" onClick={onConfirm} disabled={isSubmitting}>Sim</Button></div></div></div>; }
 
-function PaymentDetailsDrawer({ batch, payment, paymentAlert, isReviewed, isLoading, processingPaymentId, onClose, onApprove, onReject, onRestore, onToggleReviewed }: { batch?: PaymentBatch; payment?: Payment; paymentAlert?: PaymentAlert; isReviewed: boolean; isLoading: boolean; processingPaymentId: string | null; onClose: () => void; onApprove: () => void; onReject: () => void; onRestore: () => void; onToggleReviewed: () => void; }) { useEffect(() => { if (!payment) return; function handleEscape(event: KeyboardEvent) { if (event.key === "Escape") onClose(); } window.addEventListener("keydown", handleEscape); return () => window.removeEventListener("keydown", handleEscape); }, [onClose, payment]); if (!payment || !batch) return null; const observation = payment.observations ?? getPaymentObservation(payment, batch); const isApproved = payment.status === "APPROVED"; const isRejected = payment.status === "REJECTED"; const isSuspicious = Boolean(paymentAlert?.isSuspicious); return <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/25" role="dialog" aria-modal="true"><button type="button" aria-label="Fechar detalhes" className="absolute inset-0 cursor-default" onClick={onClose} /><aside className="relative flex h-full w-full max-w-[680px] flex-col border-l border-[color:var(--border)] bg-white shadow-sm"><div className="border-b border-[color:var(--border)] px-6 py-5"><div className="flex items-start justify-between gap-4"><div className="space-y-2"><p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Detalhes do pagamento</p><h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{payment.beneficiaryName}</h2><div className="flex flex-wrap items-center gap-2"><StatusBadge status={payment.status} /><BenefitBadge benefitType={payment.benefitType ?? batch.benefitType} />{isSuspicious ? <SuspiciousFlagBadge severity={paymentAlert?.severity ?? "warning"} label="Suspeito" /> : null}{isSuspicious && isReviewed ? <ReviewBadge /> : null}</div></div><Button type="button" variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button></div></div><div className="flex-1 space-y-6 overflow-y-auto px-6 py-6"><div className="grid gap-3 sm:grid-cols-2"><DetailBlock icon={ShieldCheck} label="Nome do beneficiario" value={payment.beneficiaryName} /><DetailBlock icon={FileBadge2} label="Documento do beneficiario" value={formatDocument(payment.document)} /><DetailBlock icon={CircleDollarSign} label="Valor bruto do pagamento" value={formatCurrency(payment.grossAmount)} /><DetailBlock icon={CalendarDays} label="Data para pagamento" value={formatDate(payment.paymentDate)} /><DetailBlock icon={Gift} label="Tipo do beneficio" value={formatBenefitType(payment.benefitType ?? batch.benefitType)} /><DetailBlock icon={Layers3} label="Status atual" value={statusLabel(payment.status)} /></div>{isSuspicious ? <DrawerSection icon={AlertTriangle} title="Sinais de alerta" description="Regras que colocaram este pagamento fora do ponto medio esperado."><div className="space-y-3"><div className="rounded-lg bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">{paymentAlert?.reasons.map(formatSuspicionReason).join(" • ")}</div>{payment.status === "PENDING" ? <Button type="button" variant="secondary" className={cn("min-h-10 min-w-[148px] whitespace-nowrap rounded-lg border px-4 py-2.5 text-sm font-semibold shadow-sm", isReviewed ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100" : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200")} onClick={onToggleReviewed}>{isReviewed ? "Cancelar revisao" : "Revisar"}</Button> : null}</div></DrawerSection> : null}<DrawerSection icon={ShieldCheck} title="Observacoes" description="Contexto de apoio para a revisao antes da decisao."><div className="rounded-lg bg-[color:var(--surface-muted)] px-4 py-4 text-sm leading-6 text-slate-700">{isLoading ? "Atualizando detalhes do pagamento com os dados mais recentes do backend..." : observation}</div></DrawerSection></div><div className="border-t border-[color:var(--border)] bg-white px-6 py-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-slate-600">Use as acoes abaixo para concluir a analise deste pagamento.</p><div className="flex flex-wrap gap-3"><Button type="button" variant="success" onClick={onApprove} disabled={isApproved || processingPaymentId === payment.id}>Aprovar</Button><Button type="button" variant="danger" onClick={onReject} disabled={isRejected || processingPaymentId === payment.id}>Rejeitar</Button>{isRejected ? <Button type="button" variant="secondary" onClick={onRestore}>Voltar para pendente</Button> : null}<Button type="button" variant="ghost" onClick={onClose}>Fechar</Button></div></div></div></aside></div>; }
+function PaymentDetailsDrawer({
+  batch,
+  payment,
+  paymentAlert,
+  isReviewed,
+  isLoading,
+  processingPaymentId,
+  canManageApprovals,
+  onClose,
+  onApprove,
+  onReject,
+  onRestore,
+  onToggleReviewed
+}: {
+  batch?: PaymentBatch;
+  payment?: Payment;
+  paymentAlert?: PaymentAlert;
+  isReviewed: boolean;
+  isLoading: boolean;
+  processingPaymentId: string | null;
+  canManageApprovals: boolean;
+  onClose: () => void;
+  onApprove: () => void;
+  onReject: () => void;
+  onRestore: () => void;
+  onToggleReviewed: () => void;
+}) {
+  useEffect(() => {
+    if (!payment) return;
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [onClose, payment]);
+
+  if (!payment || !batch) return null;
+
+  const observation = payment.observations ?? getPaymentObservation(payment, batch);
+  const isApproved = payment.status === "APPROVED";
+  const isRejected = payment.status === "REJECTED";
+  const isSuspicious = Boolean(paymentAlert?.isSuspicious);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/25" role="dialog" aria-modal="true">
+      <button type="button" aria-label="Fechar detalhes" className="absolute inset-0 cursor-default" onClick={onClose} />
+
+      <aside className="relative flex h-full w-full max-w-[680px] flex-col border-l border-[color:var(--border)] bg-white shadow-sm">
+        <div className="border-b border-[color:var(--border)] px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Detalhes do pagamento</p>
+              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{payment.beneficiaryName}</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge status={payment.status} />
+                <BenefitBadge benefitType={payment.benefitType ?? batch.benefitType} />
+                {isSuspicious ? (
+                  <SuspiciousFlagBadge severity={paymentAlert?.severity ?? "warning"} label="Suspeito" />
+                ) : null}
+                {isSuspicious && isReviewed ? <ReviewBadge /> : null}
+              </div>
+            </div>
+
+            <Button type="button" variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailBlock icon={ShieldCheck} label="Nome do beneficiario" value={payment.beneficiaryName} />
+            <DetailBlock icon={FileBadge2} label="Documento do beneficiario" value={formatDocument(payment.document)} />
+            <DetailBlock icon={CircleDollarSign} label="Valor bruto do pagamento" value={formatCurrency(payment.grossAmount)} />
+            <DetailBlock icon={CalendarDays} label="Data para pagamento" value={formatDate(payment.paymentDate)} />
+            <DetailBlock icon={Gift} label="Tipo do beneficio" value={formatBenefitType(payment.benefitType ?? batch.benefitType)} />
+            <DetailBlock icon={Layers3} label="Status atual" value={statusLabel(payment.status)} />
+          </div>
+
+          {isSuspicious ? (
+            <DrawerSection
+              icon={AlertTriangle}
+              title="Sinais de alerta"
+              description="Regras que colocaram este pagamento fora do ponto medio esperado."
+            >
+              <div className="space-y-3">
+                <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                  {paymentAlert?.reasons.map(formatSuspicionReason).join(" • ")}
+                </div>
+
+                {payment.status === "PENDING" && canManageApprovals ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className={cn(
+                      "min-h-10 min-w-[148px] whitespace-nowrap rounded-lg border px-4 py-2.5 text-sm font-semibold shadow-sm",
+                      isReviewed
+                        ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                        : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200"
+                    )}
+                    onClick={onToggleReviewed}
+                  >
+                    {isReviewed ? "Cancelar revisao" : "Revisar"}
+                  </Button>
+                ) : null}
+              </div>
+            </DrawerSection>
+          ) : null}
+
+          <DrawerSection
+            icon={ShieldCheck}
+            title="Observacoes"
+            description="Contexto de apoio para a revisao antes da decisao."
+          >
+            <div className="rounded-lg bg-[color:var(--surface-muted)] px-4 py-4 text-sm leading-6 text-slate-700">
+              {isLoading ? "Atualizando detalhes do pagamento com os dados mais recentes do backend..." : observation}
+            </div>
+          </DrawerSection>
+        </div>
+
+        <div className="border-t border-[color:var(--border)] bg-white px-6 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">
+              {canManageApprovals
+                ? "Use as acoes abaixo para concluir a analise deste pagamento."
+                : "Seu perfil esta configurado para consulta. As acoes operacionais ficam bloqueadas nesta tela."}
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              {canManageApprovals ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="success"
+                    onClick={onApprove}
+                    disabled={isApproved || processingPaymentId === payment.id}
+                  >
+                    Aprovar
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={onReject}
+                    disabled={isRejected || processingPaymentId === payment.id}
+                  >
+                    Rejeitar
+                  </Button>
+                  {isRejected ? (
+                    <Button type="button" variant="secondary" onClick={onRestore}>
+                      Voltar para pendente
+                    </Button>
+                  ) : null}
+                </>
+              ) : (
+                <span className="data-chip">Somente leitura</span>
+              )}
+
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Fechar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
 function DrawerSection({ icon: Icon, title, description, children }: { icon: ComponentType<{ className?: string }>; title: string; description: string; children: ReactNode; }) { return <section className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-5"><div className="flex items-start gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)]"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="flex-1 space-y-4"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p><p className="mt-1 text-sm text-slate-600">{description}</p></div>{children}</div></div></section>; }
 function DetailBlock({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value?: string; }) { return <div className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-4"><div className="flex items-start gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)]"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="space-y-1"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p><p className="text-base font-semibold text-slate-950">{value ?? "-"}</p></div></div></div>; }
 function SuspiciousFlagBadge({ severity, label = "Suspeito" }: { severity: AlertSeverity; label?: string }) { return <span className={cn("inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]", severity === "critical" ? "border-rose-200 bg-rose-100 text-rose-800" : "border-amber-200 bg-amber-100 text-amber-800")}><AlertTriangle className="h-3.5 w-3.5" />{label}</span>; }

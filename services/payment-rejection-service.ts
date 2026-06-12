@@ -20,9 +20,8 @@ export async function rejectPaymentById(
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      motivo
-    })
+    body: JSON.stringify(motivo ? { motivo } : {})
+
   });
 
   if (!response.ok) {
