@@ -39,7 +39,7 @@ export default async function Home({
     <main className="min-h-screen w-full">
       <AppHeader activeTab="approvals" />
       <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-5 sm:px-6 xl:px-8">
-        <DashboardShell initialBatches={batches} initialSummary={initialSummary} permissionLevel={session?.user.permissionLevel} />
+        <DashboardShell initialBatches={batches} initialSummary={initialSummary} role={session?.user.role} />
       </div>
     </main>
   );

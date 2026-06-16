@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { canAccessPath, getDefaultRouteForPermission } from "@/lib/auth/access";
+import { canAccessPath, getDefaultRouteForRole } from "@/lib/auth/access";
 import { isAuthEnabled } from "@/lib/auth/config";
+import { canAccessFeature, DASHBOARD_FEATURES } from "@/lib/auth/roles";
 import { AUTH_ACCESS_TOKEN_COOKIE, resolveSessionFromAccessToken } from "@/lib/auth/token-session";
 
 function isProtectedPath(pathname: string) {
@@ -12,7 +13,8 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/tesouraria") ||
     pathname.startsWith("/api/aprovacoes") ||
     pathname.startsWith("/api/historico") ||
-    pathname.startsWith("/api/visao-mensal")
+    pathname.startsWith("/api/visao-mensal") ||
+    pathname.startsWith("/api/tesouraria")
   );
 }
 
@@ -39,22 +41,26 @@ export function middleware(request: NextRequest) {
   const session = accessToken ? resolveSessionFromAccessToken(accessToken) : null;
 
   if (session) {
-    if (!canAccessPath(session.user.permissionLevel, pathname)) {
+    if (!canAccessPath(session.user.role, pathname)) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ message: "Acesso negado para este perfil." }, { status: 403 });
       }
 
-      return NextResponse.redirect(new URL(getDefaultRouteForPermission(session.user.permissionLevel), request.url));
+      return NextResponse.redirect(new URL(getDefaultRouteForRole(session.user.role), request.url));
     }
 
-    if (pathname.startsWith("/api/aprovacoes") && request.method !== "GET" && session.user.permissionLevel !== "ADMIN") {
+    if (
+      pathname.startsWith("/api/aprovacoes") &&
+      request.method !== "GET" &&
+      !canAccessFeature(session.user.role, DASHBOARD_FEATURES.APPROVALS_MANAGE)
+    ) {
       return NextResponse.json({ message: "Perfil sem permissao para alterar aprovacoes." }, { status: 403 });
     }
 
     return NextResponse.next();
   }
 
-  if (pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/historico") || pathname.startsWith("/api/visao-mensal")) {
+  if (pathname.startsWith("/api/")) {
     return NextResponse.json({ message: "Nao autenticado." }, { status: 401 });
   }
 
@@ -71,6 +77,7 @@ export const config = {
     "/tesouraria/:path*",
     "/api/aprovacoes/:path*",
     "/api/historico/:path*",
-    "/api/visao-mensal/:path*"
+    "/api/visao-mensal/:path*",
+    "/api/tesouraria/:path*"
   ]
 };

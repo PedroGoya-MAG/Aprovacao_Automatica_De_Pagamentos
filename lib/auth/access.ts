@@ -1,108 +1,77 @@
 import { extractClaimStrings } from "@/lib/auth/jwt";
-import { type AuthTokenPayload, type AuthenticatedSession, type PermissionLevel } from "@/types/auth";
+import {
+  canAccessFeature,
+  DASHBOARD_FEATURES,
+  DASH_BENEFICIO_ROLES,
+  type DashboardFeature,
+  type DashBeneficioRole
+} from "@/lib/auth/roles";
+import { type AuthTokenPayload, type AuthenticatedSession } from "@/types/auth";
 
 type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
 
-const TEMP_USER_ROLE_MAP: Record<string, PermissionLevel> = {
-  cdaraujo: "ADMIN",
-  atang: "ADMIN",
-  lqueiroz: "BENEFICIO",
-  "esx.pgoya": "BENEFICIO",
-  ssimoncelo: "BENEFICIO",
-  "esx.lrcorrea": "BENEFICIO",
-  kvarges: "BENEFICIO",
-  "esx.vsvargas": "BENEFICIO",
-  lmmoreira: "BENEFICIO",
-  mapereira: "BENEFICIO",
-  jcsouza: "BENEFICIO",
-  sdsantos: "TESOURARIA",
-  bmeira: "TESOURARIA"
+const TAB_FEATURES: Record<AppHeaderTab, DashboardFeature> = {
+  approvals: DASHBOARD_FEATURES.APPROVALS_VIEW,
+  history: DASHBOARD_FEATURES.HISTORY_VIEW,
+  monthly: DASHBOARD_FEATURES.MONTHLY_VIEW,
+  treasury: DASHBOARD_FEATURES.TREASURY_VIEW
 };
-
-export function resolveTemporaryPermissionLevel(payload: AuthTokenPayload, scopes: string[]): PermissionLevel | null {
-  if (!scopes.includes("dash.beneficio")) {
-    return null;
-  }
-
-  const candidates = getUserIdentityCandidates(payload);
-
-  for (const candidate of candidates) {
-    const permissionLevel = TEMP_USER_ROLE_MAP[candidate];
-
-    if (permissionLevel) {
-      return permissionLevel;
-    }
-  }
-
-  return null;
-}
 
 export function extractAuthorizedScopes(payload: AuthTokenPayload) {
   const directScopes = extractClaimStrings(payload, ["OAuth2.ClientAllowedScopes"]);
   return Array.from(new Set(directScopes.map((scope) => scope.trim()).filter(Boolean)));
 }
 
-export function getUserIdentityCandidates(payload: AuthTokenPayload) {
-  const values = new Set<string>();
-  const rawValues = [
-    payload.name,
-    payload.sub,
-    payload.preferred_username,
-    payload.email,
-    ...(typeof payload.email === "string" && payload.email.includes("@") ? [payload.email.split("@")[0]] : [])
-  ];
-
-  rawValues.forEach((value) => {
-    if (typeof value !== "string" || !value.trim()) {
-      return;
-    }
-
-    values.add(normalizeIdentity(value));
-  });
-
-  return Array.from(values);
+export function canAccessTab(role: DashBeneficioRole, tab: AppHeaderTab) {
+  return canAccessFeature(role, TAB_FEATURES[tab]);
 }
 
-export function canAccessTab(permissionLevel: PermissionLevel, tab: AppHeaderTab) {
-  if (permissionLevel === "TESOURARIA") {
-    return tab === "treasury";
-  }
+export function canAccessPath(role: DashBeneficioRole, pathname: string) {
+  const feature = getFeatureForPath(pathname);
 
-  return true;
-}
-
-export function canAccessPath(permissionLevel: PermissionLevel, pathname: string) {
-  if (permissionLevel === "TESOURARIA") {
-    return pathname.startsWith("/tesouraria") || pathname.startsWith("/api/tesouraria");
-  }
-
-  return true;
+  return feature ? canAccessFeature(role, feature) : true;
 }
 
 export function canManageApprovals(session: AuthenticatedSession | null) {
-  return session?.user.permissionLevel === "ADMIN";
+  return session ? canAccessFeature(session.user.role, DASHBOARD_FEATURES.APPROVALS_MANAGE) : false;
 }
 
 export function isReadOnlyApprovalUser(session: AuthenticatedSession | null) {
-  return session?.user.permissionLevel === "BENEFICIO";
+  return session?.user.role === DASH_BENEFICIO_ROLES.BENEFICIO;
 }
 
-export function getDefaultRouteForPermission(permissionLevel: PermissionLevel) {
-  return permissionLevel === "TESOURARIA" ? "/tesouraria" : "/";
+export function getDefaultRouteForRole(role: DashBeneficioRole) {
+  return role === DASH_BENEFICIO_ROLES.TESOURARIA ? "/tesouraria" : "/";
 }
 
-export function formatPermissionLabel(permissionLevel: PermissionLevel) {
-  if (permissionLevel === "ADMIN") {
+export function formatRoleLabel(role: DashBeneficioRole) {
+  if (role === DASH_BENEFICIO_ROLES.ADMIN) {
     return "Administrador";
   }
 
-  if (permissionLevel === "TESOURARIA") {
+  if (role === DASH_BENEFICIO_ROLES.TESOURARIA) {
     return "Tesouraria";
   }
 
   return "Beneficio";
 }
 
-function normalizeIdentity(value: string) {
-  return value.trim().toLowerCase();
+function getFeatureForPath(pathname: string): DashboardFeature | null {
+  if (pathname.startsWith("/tesouraria") || pathname.startsWith("/api/tesouraria")) {
+    return DASHBOARD_FEATURES.TREASURY_VIEW;
+  }
+
+  if (pathname.startsWith("/historico") || pathname.startsWith("/api/historico")) {
+    return DASHBOARD_FEATURES.HISTORY_VIEW;
+  }
+
+  if (pathname.startsWith("/visao-mensal") || pathname.startsWith("/api/visao-mensal")) {
+    return DASHBOARD_FEATURES.MONTHLY_VIEW;
+  }
+
+  if (pathname === "/" || pathname.startsWith("/api/aprovacoes")) {
+    return DASHBOARD_FEATURES.APPROVALS_VIEW;
+  }
+
+  return null;
 }
