@@ -6,6 +6,7 @@ import {
   getAuthScope,
   getAuthTokenUrl
 } from "@/lib/auth/config";
+import { createRequestTimeoutSignal } from "@/lib/http";
 import { type OAuthTokenResponse } from "@/types/auth";
 
 export function createOAuthState() {
@@ -36,6 +37,7 @@ export async function exchangeCodeForToken(code: string) {
   const response = await fetch(getAuthTokenUrl(), {
     method: "POST",
     cache: "no-store",
+    signal: createRequestTimeoutSignal(),
     headers: {
       "Content-Type": "application/x-www-form-urlencoded"
     },
