@@ -23,8 +23,6 @@ export interface OAuthTokenResponse {
 }
 
 export interface AuthenticatedSession {
-  accessToken: string;
-  tokenType: string;
   expiresAt: string | null;
   user: {
     id: string;
@@ -32,6 +30,5 @@ export interface AuthenticatedSession {
     email?: string;
     scopes: string[];
     role: DashBeneficioRole;
-    claims: AuthTokenPayload;
   };
 }

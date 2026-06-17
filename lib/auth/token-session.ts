@@ -34,16 +34,13 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
   }
 
   return {
-    accessToken,
-    tokenType: "Bearer",
     expiresAt: typeof payload.exp === "number" ? new Date(payload.exp * 1000).toISOString() : null,
     user: {
       id: typeof payload.sub === "string" ? payload.sub : email ?? name,
       name,
       email,
       scopes,
-      role,
-      claims: payload
+      role
     }
   };
 }

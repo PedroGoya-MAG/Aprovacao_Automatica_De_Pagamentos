@@ -37,6 +37,10 @@ export function getAuthTokenUrl() {
   return readEnv("AUTH_IDENTIDADE_TOKEN_URL");
 }
 
+export function getAuthLogoutUrl() {
+  return readEnv("AUTH_IDENTIDADE_LOGOUT_URL");
+}
+
 export function getAuthClientId() {
   return readEnv("AUTH_IDENTIDADE_CLIENT_ID");
 }

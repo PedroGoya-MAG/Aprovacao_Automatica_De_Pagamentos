@@ -2,6 +2,7 @@ import {
   getAuthAuthorizeUrl,
   getAuthClientId,
   getAuthClientSecret,
+  getAuthLogoutUrl,
   getAuthRedirectUri,
   getAuthScope,
   getAuthTokenUrl
@@ -13,7 +14,7 @@ export function createOAuthState() {
   return crypto.randomUUID();
 }
 
-export function buildAuthorizeUrl(state: string) {
+export function buildAuthorizeUrl(state: string, options?: { prompt?: "login" }) {
   const url = new URL(getAuthAuthorizeUrl());
 
   url.searchParams.set("response_type", "code");
@@ -21,6 +22,24 @@ export function buildAuthorizeUrl(state: string) {
   url.searchParams.set("redirect_uri", getAuthRedirectUri());
   url.searchParams.set("scope", getAuthScope());
   url.searchParams.set("state", state);
+
+  if (options?.prompt) {
+    url.searchParams.set("prompt", options.prompt);
+  }
+
+  return url.toString();
+}
+
+export function buildLogoutUrl(postLogoutRedirectUri: string) {
+  const logoutUrl = getAuthLogoutUrl();
+
+  if (!logoutUrl) {
+    return null;
+  }
+
+  const url = new URL(logoutUrl);
+  url.searchParams.set("client_id", getAuthClientId());
+  url.searchParams.set("post_logout_redirect_uri", postLogoutRedirectUri);
 
   return url.toString();
 }
