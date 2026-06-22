@@ -1,4 +1,5 @@
 import { getN8nApiUrl } from "@/lib/env";
+import { createRequestTimeoutSignal } from "@/lib/http";
 
 type N8nParamValue = string | number | boolean | null | undefined;
 type N8nParams = Record<string, N8nParamValue | Array<string | number | boolean>>;
@@ -32,6 +33,7 @@ export async function n8nGet<T>(screen: string, action: string, params: N8nParam
   const response = await fetch(buildN8nGetUrl(screen, action, params), {
     method: "GET",
     cache: "no-store",
+    signal: createRequestTimeoutSignal(),
     headers: {
       Accept: "application/json"
     }
@@ -44,6 +46,7 @@ export async function n8nPost<T>(screen: string, action: string, body: Record<st
   const response = await fetch(getN8nApiUrl(), {
     method: "POST",
     cache: "no-store",
+    signal: createRequestTimeoutSignal(),
     headers: {
       Accept: "application/json",
       "Content-Type": "application/json"

@@ -1,5 +1,6 @@
-import { extractAuthorizedScopes, resolveTemporaryPermissionLevel } from "@/lib/auth/access";
-import { decodeJwtPayload, extractClaimStrings, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
+import { extractAuthorizedScopes } from "@/lib/auth/access";
+import { decodeJwtPayload, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
+import { getDashBeneficioRoleFromPayload } from "@/lib/auth/roles";
 import { type AuthenticatedSession } from "@/types/auth";
 
 export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_hmg_access_token";
@@ -26,25 +27,20 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
     email ||
     (typeof payload.sub === "string" ? payload.sub : "Usuario MAG");
   const scopes = Array.from(new Set([...extractScopeValues(payload), ...extractAuthorizedScopes(payload)]));
-  const roleCandidates = extractClaimStrings(payload, ["role", "roles", "perfil", "profile", "groups"]);
-  const permissionLevel = resolveTemporaryPermissionLevel(payload, scopes);
+  const role = getDashBeneficioRoleFromPayload(payload);
 
-  if (!permissionLevel) {
+  if (!role) {
     return null;
   }
 
   return {
-    accessToken,
-    tokenType: "Bearer",
     expiresAt: typeof payload.exp === "number" ? new Date(payload.exp * 1000).toISOString() : null,
     user: {
       id: typeof payload.sub === "string" ? payload.sub : email ?? name,
       name,
       email,
       scopes,
-      permissionLevel,
-      roleCandidates,
-      claims: payload
+      role
     }
   };
 }

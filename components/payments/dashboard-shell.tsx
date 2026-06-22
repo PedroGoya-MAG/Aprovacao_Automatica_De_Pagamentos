@@ -35,13 +35,13 @@ import { approvePaymentById } from "@/services/payment-approval-service";
 import { rejectPaymentById } from "@/services/payment-rejection-service";
 import { approveSelectedPayments } from "@/services/batch-selected-approval-service";
 import { approveBatch } from "@/services/batch-approval-service";
-import { type PermissionLevel } from "@/types/auth";
+import { canAccessFeature, DASHBOARD_FEATURES, type DashBeneficioRole } from "@/lib/auth/roles";
 import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
 type DashboardShellProps = {
   initialBatches: PaymentBatch[];
   initialSummary: ResumoDashboard | null;
-  permissionLevel?: PermissionLevel;
+  role?: DashBeneficioRole;
 };
 
 type BenefitFilterOption = "ALL" | BenefitType;
@@ -114,7 +114,7 @@ const emptyBatchAlert: BatchAlert = {
 
 let toastCounter = 0;
 
-export function DashboardShell({ initialBatches, initialSummary, permissionLevel }: DashboardShellProps) {
+export function DashboardShell({ initialBatches, initialSummary, role }: DashboardShellProps) {
   const [batches, setBatches] = useState(initialBatches);
   const [filterType, setFilterType] = useState<BenefitFilterOption>("ALL");
   const [filterStatus, setFilterStatus] = useState<StatusFilterOption>("ALL");
@@ -147,8 +147,8 @@ export function DashboardShell({ initialBatches, initialSummary, permissionLevel
   const [rejectionDraft, setRejectionDraft] = useState<RejectionDraft>(null);
   const deferredSearch = useDeferredValue(search);
   const normalizedSearch = normalizeText(deferredSearch);
-  const isReadOnly = permissionLevel === "BENEFICIO";
-  const canManageApprovals = !isReadOnly && permissionLevel !== "TESOURARIA";
+  const isReadOnly = role ? !canAccessFeature(role, DASHBOARD_FEATURES.APPROVALS_MANAGE) : false;
+  const canManageApprovals = role ? canAccessFeature(role, DASHBOARD_FEATURES.APPROVALS_MANAGE) : true;
 
   function notify(title: string, description: string, tone: ToastItem["tone"]) {
     const id = toastCounter++;

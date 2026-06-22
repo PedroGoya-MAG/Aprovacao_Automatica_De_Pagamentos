@@ -1,3 +1,5 @@
+import { type DashBeneficioRole } from "@/lib/auth/roles";
+
 export interface AuthTokenPayload extends Record<string, unknown> {
   sub?: string;
   name?: string;
@@ -8,9 +10,8 @@ export interface AuthTokenPayload extends Record<string, unknown> {
   exp?: number;
   iat?: number;
   nbf?: number;
+  DashBeneficio?: unknown;
 }
-
-export type PermissionLevel = "ADMIN" | "BENEFICIO" | "TESOURARIA";
 
 export interface OAuthTokenResponse {
   access_token: string;
@@ -22,16 +23,12 @@ export interface OAuthTokenResponse {
 }
 
 export interface AuthenticatedSession {
-  accessToken: string;
-  tokenType: string;
   expiresAt: string | null;
   user: {
     id: string;
     name: string;
     email?: string;
     scopes: string[];
-    permissionLevel: PermissionLevel;
-    roleCandidates: string[];
-    claims: AuthTokenPayload;
+    role: DashBeneficioRole;
   };
 }

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     if (!session) {
       const response = new NextResponse(
-        "Usuario autenticado sem o scope dash.beneficio. O acesso ao portal nao foi liberado.",
+        "Usuario autenticado sem um perfil DashBeneficio valido. O acesso ao portal nao foi liberado.",
         { status: 403 }
       );
       clearAuthSessionCookies(response);

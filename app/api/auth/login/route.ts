@@ -18,8 +18,9 @@ export async function GET(request: NextRequest) {
   }
 
   const returnTo = sanitizeReturnTo(request.nextUrl.searchParams.get("returnTo"));
+  const prompt = request.nextUrl.searchParams.get("prompt") === "login" ? "login" : undefined;
   const state = createOAuthState();
-  const response = NextResponse.redirect(buildAuthorizeUrl(state));
+  const response = NextResponse.redirect(buildAuthorizeUrl(state, { prompt }));
 
   response.cookies.set({
     name: AUTH_STATE_COOKIE,

@@ -29,12 +29,19 @@ export function MonthlyShell({ batches, monthOptions, initialSummary, initialSer
     return batches.filter((batch) => batch.scheduledAt.slice(0, 7) === selectedMonth).filter((batch) => selectedType === "ALL" || batch.benefitType === selectedType);
   }, [batches, selectedMonth, selectedType]);
 
-  const payments = filteredBatches.flatMap((batch) => batch.payments);
-  const reasons = buildReasonBreakdown(payments);
-  const fallbackDailySeries = buildDailySeries(payments);
-  const fallbackWeeklySeries = buildWeeklySeries(payments);
-  const topSuspiciousPayments = payments.filter((payment) => payment.isSuspicious).sort((left, right) => right.grossAmount - left.grossAmount).slice(0, 4);
-  const localSuspiciousCount = payments.filter((payment) => payment.isSuspicious).length;
+  const payments = useMemo(() => filteredBatches.flatMap((batch) => batch.payments), [filteredBatches]);
+  const reasons = useMemo(() => buildReasonBreakdown(payments), [payments]);
+  const fallbackDailySeries = useMemo(() => buildDailySeries(payments), [payments]);
+  const fallbackWeeklySeries = useMemo(() => buildWeeklySeries(payments), [payments]);
+  const topSuspiciousPayments = useMemo(
+    () =>
+      payments
+        .filter((payment) => payment.isSuspicious)
+        .sort((left, right) => right.grossAmount - left.grossAmount)
+        .slice(0, 4),
+    [payments]
+  );
+  const localSuspiciousCount = useMemo(() => payments.filter((payment) => payment.isSuspicious).length, [payments]);
 
   useEffect(() => {
     let active = true;
