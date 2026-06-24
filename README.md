@@ -153,6 +153,29 @@ POST:
 
 ## Deploy na Vercel
 
+### Autenticacao OAuth/OIDC em producao
+
+Este projeto usa uma implementacao OAuth/OIDC propria; ele nao usa NextAuth/Auth.js. Portanto, `NEXTAUTH_URL`,
+`NEXTAUTH_SECRET`, `AUTH_SECRET` e `AUTH_TRUST_HOST` nao sao lidos pela aplicacao. A configuracao equivalente e:
+
+- `AUTH_APP_BASE_URL`: origem canonica unica, sem caminho e sem barra final, por exemplo `https://pagamentos.empresa.com.br`.
+- `AUTH_IDENTIDADE_REDIRECT_URI`: deve ser exatamente
+  `https://pagamentos.empresa.com.br/api/auth/callback` e coincidir, inclusive em esquema, host, caminho e barra final,
+  com a URI cadastrada no Identidade.
+- `AUTH_IDENTIDADE_LOGOUT_URL`: endpoint de encerramento de sessao do provedor. Quando configurado, o logout
+  encerra primeiro a sessao no Identidade e depois inicia um login novo.
+- `AUTH_IDENTIDADE_PKCE_ENABLED`: `true` por padrao. Use `false` somente se o provedor confirmar que nao suporta
+  PKCE S256.
+- `AUTH_IDENTIDADE_FORCE_LOGIN`: em homologacao, use `true` para enviar `prompt=login` e `max_age=0` em todo login.
+- `AUTH_COOKIE_SECURE`: cookies sao sempre `Secure` em producao. Em desenvolvimento HTTP local, use `false`.
+- `AUTH_COOKIE_DOMAIN`: deixe vazio para cookies host-only. Defina apenas quando houver necessidade comprovada de
+  compartilhar cookies entre subdominios; nao use o dominio `*.vercel.app`.
+
+Configure a mesma origem canonica no Identidade e na Vercel. Evite alternar entre o dominio customizado, o dominio
+automatico `*.vercel.app` e URLs de preview durante uma mesma autenticacao, pois cookies host-only e o `state` nao
+sao compartilhados entre esses hosts. Cadastre tambem a URL de retorno de logout exigida pelo provedor. Variaveis
+secretas, especialmente `AUTH_IDENTIDADE_CLIENT_SECRET`, devem existir somente no ambiente server-side da Vercel.
+
 ### Via painel da Vercel
 
 1. Envie o projeto para GitHub, GitLab ou Bitbucket.

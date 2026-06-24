@@ -23,13 +23,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const { pathname, search, searchParams } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
 
   if (pathname.startsWith("/api/auth")) {
-    return NextResponse.next();
-  }
-
-  if (pathname === "/" && (searchParams.has("code") || searchParams.has("error"))) {
     return NextResponse.next();
   }
 

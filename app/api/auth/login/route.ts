@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthCookieSecure, isAuthEnabled } from "@/lib/auth/config";
-import { buildAuthorizeUrl, createOAuthState } from "@/lib/auth/oauth";
-import { AUTH_RETURN_TO_COOKIE, AUTH_STATE_COOKIE } from "@/lib/auth/token-session";
+import { getAppBaseUrl, isAuthEnabled, shouldForceAuthPrompt } from "@/lib/auth/config";
+import { buildAuthorizeUrl, createOAuthTransaction } from "@/lib/auth/oauth";
+import { clearAuthTemporaryCookies, setAuthTransactionCookies } from "@/lib/auth/session";
+
+export const dynamic = "force-dynamic";
 
 function sanitizeReturnTo(value: string | null) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -17,30 +19,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
+  if (request.nextUrl.origin !== getAppBaseUrl()) {
+    const canonicalUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, getAppBaseUrl());
+    const response = NextResponse.redirect(canonicalUrl);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    return response;
+  }
+
   const returnTo = sanitizeReturnTo(request.nextUrl.searchParams.get("returnTo"));
-  const prompt = request.nextUrl.searchParams.get("prompt") === "login" ? "login" : undefined;
-  const state = createOAuthState();
-  const response = NextResponse.redirect(buildAuthorizeUrl(state, { prompt }));
+  const forceLogin = request.nextUrl.searchParams.get("prompt") === "login" || shouldForceAuthPrompt();
+  const transaction = await createOAuthTransaction();
+  const response = NextResponse.redirect(
+    buildAuthorizeUrl(transaction, { prompt: forceLogin ? "login" : undefined, maxAge: forceLogin ? 0 : undefined })
+  );
 
-  response.cookies.set({
-    name: AUTH_STATE_COOKIE,
-    value: state,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: getAuthCookieSecure(),
-    path: "/",
-    maxAge: 60 * 10
-  });
-
-  response.cookies.set({
-    name: AUTH_RETURN_TO_COOKIE,
-    value: returnTo,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: getAuthCookieSecure(),
-    path: "/",
-    maxAge: 60 * 10
-  });
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+  clearAuthTemporaryCookies(response);
+  setAuthTransactionCookies(response, transaction, returnTo);
 
   return response;
 }

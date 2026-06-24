@@ -3,15 +3,25 @@ function readEnv(key: string) {
 }
 
 export function getAppBaseUrl() {
-  const value = readEnv("AUTH_APP_BASE_URL") || readEnv("NEXT_PUBLIC_APP_URL");
+  const value = readEnv("AUTH_APP_BASE_URL") || readEnv("AUTH_URL") || readEnv("NEXT_PUBLIC_APP_URL");
 
   if (!value) {
     throw new Error(
-      "Variavel de ambiente obrigatoria nao configurada: AUTH_APP_BASE_URL ou NEXT_PUBLIC_APP_URL."
+      "Variavel de ambiente obrigatoria nao configurada: AUTH_APP_BASE_URL, AUTH_URL ou NEXT_PUBLIC_APP_URL."
     );
   }
 
-  return value.replace(/\/$/, "");
+  const url = new URL(value);
+
+  if (url.pathname !== "/" || url.search || url.hash) {
+    throw new Error("AUTH_APP_BASE_URL deve conter apenas a origem canonica da aplicacao.");
+  }
+
+  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") {
+    throw new Error("AUTH_APP_BASE_URL deve usar HTTPS em producao.");
+  }
+
+  return url.origin;
 }
 
 export function isAuthEnabled() {
@@ -54,15 +64,44 @@ export function getAuthScope() {
 }
 
 export function getAuthRedirectUri() {
-  return readEnv("AUTH_IDENTIDADE_REDIRECT_URI") || `${getAppBaseUrl()}/`;
+  const expected = `${getAppBaseUrl()}/api/auth/callback`;
+  const configured = readEnv("AUTH_IDENTIDADE_REDIRECT_URI") || expected;
+
+  if (configured !== expected) {
+    throw new Error(`AUTH_IDENTIDADE_REDIRECT_URI deve ser exatamente ${expected}.`);
+  }
+
+  return configured;
 }
 
 export function getAuthCookieSecure() {
+  if (process.env.NODE_ENV === "production") {
+    return true;
+  }
+
   const explicit = readEnv("AUTH_COOKIE_SECURE");
 
   if (explicit) {
     return explicit === "true";
   }
 
-  return getAppBaseUrl().startsWith("https://");
+  const appUrl = readEnv("AUTH_APP_BASE_URL") || readEnv("AUTH_URL") || readEnv("NEXT_PUBLIC_APP_URL");
+  return appUrl.startsWith("https://");
+}
+
+export function getAuthCookieDomain() {
+  return readEnv("AUTH_COOKIE_DOMAIN") || undefined;
+}
+
+export function isAuthPkceEnabled() {
+  const explicit = readEnv("AUTH_IDENTIDADE_PKCE_ENABLED");
+  return explicit ? explicit === "true" : true;
+}
+
+export function isOidcEnabled() {
+  return getAuthScope().split(/\s+/).includes("openid");
+}
+
+export function shouldForceAuthPrompt() {
+  return readEnv("AUTH_IDENTIDADE_FORCE_LOGIN") === "true";
 }
