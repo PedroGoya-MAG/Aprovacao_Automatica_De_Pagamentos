@@ -105,7 +105,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
             if (statusDelta !== 0) {
               return statusDelta;
             }
-            return left.paymentDate.localeCompare(right.paymentDate);
+            return (left.paymentDate ?? "").localeCompare(right.paymentDate ?? "");
           })
           : [];
 
@@ -328,8 +328,8 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
 
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
                       <BatchInfo label="Competencia" value={batch.competence} />
-                      <BatchInfo label="Data prevista" value={formatDate(batch.scheduledAt)} />
-                      <BatchInfo label="Processado em" value={batch.processedAt ? formatDate(batch.processedAt.slice(0, 10)) : "-"} />
+                      <BatchInfo label="Data prevista" value={formatDate(batch.scheduledAt, "batch.scheduledAt")} />
+                      <BatchInfo label="Processado em" value={formatDate(batch.processedAt, "batch.processedAt")} />
                       <BatchInfo label="Processamento" value={formatProcessingType(batch.processingType)} />
                       <BatchInfo label="Pagamentos" value={String(batch.paymentCount)} />
                       <BatchInfo label="Valor total" value={formatCurrency(batch.totalAmount)} />
@@ -391,7 +391,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                               </td>
                               <td className="px-4 py-4 text-sm text-slate-600">{formatDocument(payment.document)}</td>
                               <td className="px-4 py-4 text-sm font-semibold text-slate-950">{formatCurrency(payment.grossAmount)}</td>
-                              <td className="px-4 py-4 text-sm text-slate-600">{formatDate(payment.paymentDate)}</td>
+                              <td className="px-4 py-4 text-sm text-slate-600">{formatDate(payment.paymentDate, "payment.paymentDate")}</td>
                               <td className="px-4 py-4"><StatusBadge status={payment.status} /></td>
                               <td className="px-4 py-4 text-sm text-slate-600">{getRejectionReason(payment)}</td>
                               <td className="px-4 py-4 text-sm text-slate-600">
@@ -583,8 +583,8 @@ function HistoryPaymentDrawer({ batch, payment, onClose }: { batch?: VisibleHist
           <DetailGridItem icon={Wallet} label="Valor bruto" value={formatCurrency(payment.grossAmount)} />
           <DetailGridItem icon={ShieldAlert} label="Lote" value={batch.batchNumber} />
           <DetailGridItem icon={ShieldAlert} label="Competencia" value={batch.competence} />
-          <DetailGridItem icon={CalendarClock} label="Data do pagamento" value={formatDate(payment.paymentDate)} />
-          <DetailGridItem icon={CalendarClock} label="Processado em" value={payment.processedAt ? formatDate(payment.processedAt.slice(0, 10)) : "-"} />
+          <DetailGridItem icon={CalendarClock} label="Data do pagamento" value={formatDate(payment.paymentDate, "payment.paymentDate")} />
+          <DetailGridItem icon={CalendarClock} label="Processado em" value={formatDate(payment.processedAt, "payment.processedAt")} />
           <DetailGridItem icon={ShieldAlert} label="Tipo de processamento" value={payment.processingType === "MANUAL" ? "Manual" : "Automatico"} />
 
           <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">

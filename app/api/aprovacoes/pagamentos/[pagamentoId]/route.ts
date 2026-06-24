@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { N8nApiError, n8nGet } from "@/lib/n8n-api";
+import { normalizeDateValue } from "@/lib/formatters";
 import { type Payment } from "@/types/payments";
 
 export async function GET(
@@ -38,12 +39,20 @@ function normalizePayment(rawData: unknown, pagamentoId: string): Payment | null
     beneficiaryName: pickText(rawData.beneficiaryName, "Beneficiario nao informado") ?? "Beneficiario nao informado",
     document: pickText(rawData.document, "-") ?? "-",
     grossAmount: Number(rawData.grossAmount ?? 0),
-    paymentDate: String(rawData.paymentDate ?? ""),
+    paymentDate: firstDate("payment.paymentDate", rawData.paymentDate, rawData.dataPagamento, rawData.datePayment, rawData.dueDate),
     benefitType: normalizeBenefitType(rawData.benefitType),
     status: normalizeStatus(rawData.status),
     reference: pickText(rawData.reference, String(rawData.id ?? pagamentoId)) ?? String(rawData.id ?? pagamentoId),
     observations: pickText(rawData.observations)
   };
+}
+
+function firstDate(fieldName: string, ...values: unknown[]) {
+  for (const value of values) {
+    const normalized = normalizeDateValue(value as string | number | Date | null | undefined, fieldName);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function normalizeBenefitType(value: unknown): Payment["benefitType"] {

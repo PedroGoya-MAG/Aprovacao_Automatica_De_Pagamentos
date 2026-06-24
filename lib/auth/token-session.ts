@@ -1,6 +1,7 @@
 import { extractAuthorizedScopes } from "@/lib/auth/access";
 import { decodeJwtPayload, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
 import { getDashBeneficioRoleFromPayload } from "@/lib/auth/roles";
+import { parseDate } from "@/lib/formatters";
 import { type AuthenticatedSession } from "@/types/auth";
 
 export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_hmg_access_token";
@@ -37,7 +38,7 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
   }
 
   return {
-    expiresAt: typeof payload.exp === "number" ? new Date(payload.exp * 1000).toISOString() : null,
+    expiresAt: toExpirationDate(payload.exp),
     user: {
       id: typeof payload.sub === "string" ? payload.sub : email ?? name,
       name,
@@ -46,4 +47,10 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
       role
     }
   };
+}
+
+function toExpirationDate(value: unknown) {
+  if (typeof value !== "number") return null;
+  const date = parseDate(value * 1000, "token.exp");
+  return date ? date.toISOString() : null;
 }

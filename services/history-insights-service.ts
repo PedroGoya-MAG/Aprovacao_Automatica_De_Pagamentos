@@ -9,6 +9,7 @@ import {
 } from "@/lib/history-monthly-demo-data";
 import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
+import { getDateWeekKey, normalizeDateValue } from "@/lib/formatters";
 import {
   type MonthlySeries,
   type MonthlyTotals,
@@ -56,7 +57,7 @@ export async function getMonthlySummaryForView(month: string, benefitType: "ALL"
   if (isDemoMode()) {
     return buildMonthlySummaryFromBatches(
       getHistoricalBatchesDemo()
-        .filter((batch) => batch.scheduledAt.slice(0, 7) === month)
+        .filter((batch) => batch.scheduledAt?.slice(0, 7) === month)
         .filter((batch) => benefitType === "ALL" || batch.benefitType === benefitType),
       month
     );
@@ -74,7 +75,7 @@ export async function getMonthlySeriesForView(month: string, benefitType: "ALL" 
   if (isDemoMode()) {
     return buildMonthlySeriesFromBatches(
       getHistoricalBatchesDemo()
-        .filter((batch) => batch.scheduledAt.slice(0, 7) === month)
+        .filter((batch) => batch.scheduledAt?.slice(0, 7) === month)
         .filter((batch) => benefitType === "ALL" || batch.benefitType === benefitType)
     );
   }
@@ -132,7 +133,7 @@ function normalizeHistoricalBatch(rawData: unknown, index: number): HistoricalBa
   const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
   const id = pickText(payload.id, `history-batch-${index + 1}`);
   const batchNumber = pickText(payload.batchNumber, id);
-  const scheduledAt = pickText(payload.scheduledAt, "");
+  const scheduledAt = firstDate("batch.scheduledAt", payload.scheduledAt, payload.dataPagamento, payload.datePayment, payload.dueDate);
   const competence = pickText(payload.competence, "-");
 
   return {
@@ -151,11 +152,19 @@ function normalizeHistoricalBatch(rawData: unknown, index: number): HistoricalBa
     approvedAmount: Number(payload.approvedAmount ?? 0),
     rejectedAmount: Number(payload.rejectedAmount ?? 0),
     payments: [],
-    processedAt: pickText(payload.processedAt, scheduledAt),
+    processedAt: firstDate("batch.processedAt", payload.processedAt, payload.dataAprovacao, payload.dateStatus) ?? scheduledAt,
     hasSuspiciousPayments: Boolean(payload.hasSuspiciousPayments),
     processingType: normalizeProcessingType(payload.processingType),
     processingSummary: normalizeProcessingSummary(payload.processingSummary)
   };
+}
+
+function firstDate(fieldName: string, ...values: unknown[]) {
+  for (const value of values) {
+    const normalized = normalizeDateValue(value as string | number | Date | null | undefined, fieldName);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function normalizeBatchStatus(value: unknown): HistoricalBatchStatus {
@@ -331,10 +340,7 @@ function buildMonthlySeriesFromBatches(batches: HistoricalBatch[]): MonthlySerie
     weeklySeries: aggregateMonthlySeries(
       payments,
       (payment) => {
-        const date = new Date(`${payment.paymentDate}T12:00:00`);
-        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-        const weekIndex = Math.floor((date.getDate() + firstDay.getDay() - 1) / 7) + 1;
-        return `${date.getFullYear()}-${date.getMonth() + 1}-S${weekIndex}`;
+        return getDateWeekKey(payment.paymentDate, "payment.paymentDate");
       },
       (value) => `Semana ${value.split("S")[1]}`
     )
@@ -357,13 +363,14 @@ function sortMonthlyOptions(options: Array<{ value: string; label: string }>) {
 
 function aggregateMonthlySeries(
   payments: HistoricalBatch["payments"],
-  getKey: (payment: HistoricalBatch["payments"][number]) => string,
+  getKey: (payment: HistoricalBatch["payments"][number]) => string | null,
   getLabel: (key: string) => string
 ) {
   const aggregated = new Map<string, { label: string; count: number; amount: number }>();
 
   payments.forEach((payment) => {
     const key = getKey(payment);
+    if (!key) return;
     const current = aggregated.get(key) ?? { label: getLabel(key), count: 0, amount: 0 };
     current.count += 1;
     current.amount += payment.grossAmount;

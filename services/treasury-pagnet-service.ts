@@ -1,6 +1,7 @@
 import { getPagnetImportedPaymentsDemo } from "@/lib/treasury-pagnet-demo-data";
 import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
+import { normalizeDateValue } from "@/lib/formatters";
 import { type PagnetImportedPayment } from "@/types/treasury";
 
 export async function getPagnetImportedPayments(): Promise<PagnetImportedPayment[]> {
@@ -16,7 +17,7 @@ export async function getPagnetImportedPayments(): Promise<PagnetImportedPayment
 
   return rawData
     .map((item, index) => normalizePagnetImportedPayment(item, index))
-    .sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+    .sort((left, right) => (right.importedAt ?? "").localeCompare(left.importedAt ?? ""));
 }
 
 function normalizePagnetImportedPayment(rawData: unknown, index: number): PagnetImportedPayment {
@@ -24,13 +25,21 @@ function normalizePagnetImportedPayment(rawData: unknown, index: number): Pagnet
 
   return {
     id: pickText(payload.id, `pagnet-${index + 1}`),
-    importedAt: pickText(payload.importedAt, ""),
+    importedAt: firstDate("payment.importedAt", payload.importedAt, payload.dataCriacao, payload.datePaymentRegistration),
     amount: Number(payload.amount ?? 0),
     customerName: pickText(payload.customerName, "Cliente nao informado"),
     customerDocument: pickText(payload.customerDocument, "-"),
     paymentType: payload.paymentType === "SORTEIO" ? "SORTEIO" : "RESGATE",
-    paymentDate: pickText(payload.paymentDate, "")
+    paymentDate: firstDate("payment.paymentDate", payload.paymentDate, payload.dataPagamento, payload.datePayment, payload.dueDate)
   };
+}
+
+function firstDate(fieldName: string, ...values: unknown[]) {
+  for (const value of values) {
+    const normalized = normalizeDateValue(value as string | number | Date | null | undefined, fieldName);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function pickText(value: unknown, fallback: string) {

@@ -7,7 +7,7 @@ import { BenefitBadge } from "@/components/payments/benefit-badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Table, TableCell, TableHead, TableHeaderCell, TableRow, TableShell } from "@/components/ui/table";
-import { formatCurrency, formatDate, formatDocument, formatLongDate } from "@/lib/formatters";
+import { formatCurrency, formatDate, formatDocument, formatLongDate, parseDate } from "@/lib/formatters";
 import { normalizeText } from "@/lib/utils";
 import { type PagnetImportedPayment } from "@/types/treasury";
 
@@ -37,9 +37,9 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
 
   const latestImportedDate = useMemo(() => {
     return initialPayments.reduce((latest, payment) => {
-      const current = payment.importedAt.slice(0, 10);
+      const current = payment.importedAt?.slice(0, 10) ?? "";
       return current > latest ? current : latest;
-    }, initialPayments[0]?.importedAt.slice(0, 10) ?? "");
+    }, initialPayments[0]?.importedAt?.slice(0, 10) ?? "");
   }, [initialPayments]);
 
   const visiblePayments = useMemo(() => {
@@ -49,7 +49,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
     const defaultWindowStart = latestImportedDate ? shiftDate(latestImportedDate, -14) : "";
 
     return initialPayments.filter((payment) => {
-      const importedDate = payment.importedAt.slice(0, 10);
+      const importedDate = payment.importedAt?.slice(0, 10) ?? "";
       const matchesDefaultWindow =
         !hasActiveFilters && latestImportedDate
           ? importedDate >= defaultWindowStart && importedDate <= latestImportedDate
@@ -70,7 +70,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
     const map = new Map<string, GroupedPayments>();
 
     visiblePayments.forEach((payment) => {
-      const importedDate = payment.importedAt.slice(0, 10);
+      const importedDate = payment.importedAt?.slice(0, 10) ?? "";
       const currentGroup = map.get(importedDate);
 
       if (currentGroup) {
@@ -82,7 +82,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
 
       map.set(importedDate, {
         importedDate,
-        title: formatLongDate(`${importedDate}T12:00:00`),
+        title: formatLongDate(importedDate, "payment.importedAt"),
         paymentCount: 1,
         totalAmount: payment.amount,
         payments: [payment]
@@ -214,7 +214,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
                           <TableCell>
                             <BenefitBadge benefitType={payment.paymentType} />
                           </TableCell>
-                          <TableCell>{formatDate(payment.paymentDate)}</TableCell>
+                          <TableCell>{formatDate(payment.paymentDate, "payment.paymentDate")}</TableCell>
                         </TableRow>
                       ))}
                     </tbody>
@@ -239,7 +239,8 @@ function FilterField({ label, children }: { label: string; children: ReactNode }
 }
 
 function shiftDate(date: string, offsetInDays: number) {
-  const base = new Date(`${date}T12:00:00`);
+  const base = parseDate(date, "payment.importedAt");
+  if (!base) return "";
   base.setDate(base.getDate() + offsetInDays);
 
   const year = base.getFullYear();
