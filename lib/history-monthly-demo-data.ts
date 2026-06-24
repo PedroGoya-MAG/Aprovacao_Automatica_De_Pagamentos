@@ -10,6 +10,7 @@ import {
   type SuspicionReasonCode
 } from "@/types/insights";
 import { type BenefitType, type PaymentStatus } from "@/types/payments";
+import { getDateWeekKey } from "@/lib/formatters";
 
 type BatchSeed = {
   id: string;
@@ -438,10 +439,7 @@ function buildWeeklySeries(payments: HistoricalPayment[]): MonthlySeriesPoint[] 
   return aggregateSeries(
     payments,
     (payment) => {
-      const date = new Date(`${payment.paymentDate}T12:00:00`);
-      const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-      const weekIndex = Math.floor((date.getDate() + firstDay.getDay() - 1) / 7) + 1;
-      return `${date.getFullYear()}-${date.getMonth() + 1}-S${weekIndex}`;
+      return getDateWeekKey(payment.paymentDate, "payment.paymentDate");
     },
     (value) => `Semana ${value.split("S")[1]}`
   );
@@ -449,13 +447,14 @@ function buildWeeklySeries(payments: HistoricalPayment[]): MonthlySeriesPoint[] 
 
 function aggregateSeries(
   payments: HistoricalPayment[],
-  getKey: (payment: HistoricalPayment) => string,
+  getKey: (payment: HistoricalPayment) => string | null,
   getLabel: (key: string) => string
 ): MonthlySeriesPoint[] {
   const aggregated = new Map<string, MonthlySeriesPoint>();
 
   payments.forEach((payment) => {
     const key = getKey(payment);
+    if (!key) return;
     const current = aggregated.get(key) ?? { label: getLabel(key), count: 0, amount: 0 };
     current.count += 1;
     current.amount += payment.grossAmount;
@@ -467,6 +466,6 @@ function aggregateSeries(
     .map(([, point]) => point);
 }
 
-function getMonthKey(value: string) {
-  return value.slice(0, 7);
+function getMonthKey(value: string | null | undefined) {
+  return value?.slice(0, 7) ?? "";
 }

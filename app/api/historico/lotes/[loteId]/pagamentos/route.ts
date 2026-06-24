@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { N8nApiError, n8nGet } from "@/lib/n8n-api";
+import { normalizeDateValue } from "@/lib/formatters";
 import { type HistoricalPayment, type HistoryPaymentProcessingType, type SuspicionReasonCode } from "@/types/insights";
 
 export async function GET(
@@ -48,17 +49,25 @@ function normalizeHistoricalPayment(
     beneficiaryName: pickText(item.beneficiaryName, "Beneficiario nao informado"),
     document: pickText(item.document, "-"),
     grossAmount: Number(item.grossAmount ?? 0),
-    paymentDate: pickText(item.paymentDate, ""),
+    paymentDate: firstDate("payment.paymentDate", item.paymentDate, item.dataPagamento, item.datePayment, item.dueDate),
     benefitType: item.benefitType === "SORTEIO" ? "SORTEIO" : "RESGATE",
     status: normalizeStatus(item.status),
     reference: pickText(item.reference, normalizedId),
     observations: pickOptionalText(item.observations) ?? undefined,
-    processedAt: pickOptionalText(item.processedAt),
+    processedAt: firstDate("payment.processedAt", item.processedAt, item.dataAprovacao, item.dateStatus),
     processingType: normalizeProcessingType(item.processingType),
     rejectionReason: pickOptionalText(item.rejectionReason),
     isSuspicious: Boolean(item.isSuspicious),
     suspicionReasons
   };
+}
+
+function firstDate(fieldName: string, ...values: unknown[]) {
+  for (const value of values) {
+    const normalized = normalizeDateValue(value as string | number | Date | null | undefined, fieldName);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function normalizeStatus(value: unknown): HistoricalPayment["status"] {

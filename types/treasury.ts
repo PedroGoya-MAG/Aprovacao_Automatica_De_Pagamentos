@@ -2,12 +2,12 @@
 
 export interface PagnetImportedPayment {
   id: string;
-  importedAt: string;
+  importedAt: string | null;
   amount: number;
   customerName: string;
   customerDocument: string;
   paymentType: BenefitType;
-  paymentDate: string;
+  paymentDate: string | null;
 }
 
 export interface PagnetImportFilters {

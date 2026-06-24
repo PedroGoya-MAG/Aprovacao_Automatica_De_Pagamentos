@@ -1,6 +1,8 @@
 ﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
+
+import { getDateWeekKey } from "@/lib/formatters";
 import { AlertTriangle, CalendarRange, CircleCheckBig, Clock3, TrendingUp, Wallet } from "lucide-react";
 
 import { BenefitBadge } from "@/components/payments/benefit-badge";
@@ -26,7 +28,7 @@ export function MonthlyShell({ batches, monthOptions, initialSummary, initialSer
   const [series, setSeries] = useState(initialSeries);
 
   const filteredBatches = useMemo(() => {
-    return batches.filter((batch) => batch.scheduledAt.slice(0, 7) === selectedMonth).filter((batch) => selectedType === "ALL" || batch.benefitType === selectedType);
+    return batches.filter((batch) => batch.scheduledAt?.slice(0, 7) === selectedMonth).filter((batch) => selectedType === "ALL" || batch.benefitType === selectedType);
   }, [batches, selectedMonth, selectedType]);
 
   const payments = useMemo(() => filteredBatches.flatMap((batch) => batch.payments), [filteredBatches]);
@@ -353,10 +355,7 @@ function buildWeeklySeries(payments: HistoricalPayment[]) {
   return aggregateSeries(
     payments,
     (payment) => {
-      const date = new Date(`${payment.paymentDate}T12:00:00`);
-      const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
-      const weekIndex = Math.floor((date.getDate() + firstDay.getDay() - 1) / 7) + 1;
-      return `${date.getFullYear()}-${date.getMonth() + 1}-S${weekIndex}`;
+      return getDateWeekKey(payment.paymentDate, "payment.paymentDate");
     },
     (value) => `Semana ${value.split("S")[1]}`
   );
@@ -364,13 +363,14 @@ function buildWeeklySeries(payments: HistoricalPayment[]) {
 
 function aggregateSeries(
   payments: HistoricalPayment[],
-  getKey: (payment: HistoricalPayment) => string,
+  getKey: (payment: HistoricalPayment) => string | null,
   getLabel: (key: string) => string
 ) {
   const aggregated = new Map<string, MonthlySeriesPoint>();
 
   payments.forEach((payment) => {
     const key = getKey(payment);
+    if (!key) return;
     const current = aggregated.get(key) ?? { label: getLabel(key), count: 0, amount: 0 };
     current.count += 1;
     current.amount += payment.grossAmount;

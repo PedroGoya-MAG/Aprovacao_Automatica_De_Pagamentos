@@ -2,12 +2,23 @@ export type TipoBeneficio = "SORTEIO" | "RESGATE";
 export type StatusPagamento = "PENDING" | "APPROVED" | "REJECTED";
 export type StatusLote = "PENDING" | "PARTIALLY_APPROVED" | "APPROVED" | "REJECTED";
 
+export interface ApiDateFields {
+  dataCriacao?: string | null;
+  dataLiberacao?: string | null;
+  dataAprovacao?: string | null;
+  dataPagamento?: string | null;
+  datePayment?: string | null;
+  dateStatus?: string | null;
+  datePaymentRegistration?: string | null;
+  dueDate?: string | null;
+}
+
 export interface HistoricoPagamento {
   id: string;
   paymentId: string;
   action: "CREATED" | "SENT_TO_APPROVAL" | "WAITING_DECISION" | "APPROVED" | "REJECTED";
   description: string;
-  createdAt: string;
+  createdAt: string | null;
   createdBy: string;
 }
 
@@ -18,7 +29,7 @@ export interface Pagamento {
   beneficiaryName: string;
   document: string;
   grossAmount: number;
-  paymentDate: string;
+  paymentDate: string | null;
   benefitType?: TipoBeneficio;
   status: StatusPagamento;
   reference: string;
@@ -31,7 +42,7 @@ export interface Lote {
   batchNumber: string;
   benefitType: TipoBeneficio;
   competence: string;
-  scheduledAt: string;
+  scheduledAt: string | null;
   status?: StatusLote;
   paymentCount?: number;
   totalAmount?: number;

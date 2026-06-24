@@ -1,6 +1,7 @@
 import { getDemoLotes } from "@/lib/demo-data";
 import { n8nGet } from "@/lib/n8n-api";
 import { isDemoMode } from "@/lib/runtime-mode";
+import { normalizeDateValue } from "@/lib/formatters";
 import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
 
 type LotesFilters = {
@@ -60,7 +61,7 @@ function normalizeBatch(rawData: unknown, index: number): Lote {
     batchNumber,
     benefitType,
     competence: pickText(payload.competence, "-"),
-    scheduledAt: pickText(payload.scheduledAt, ""),
+    scheduledAt: firstDate("batch.scheduledAt", payload.scheduledAt, payload.dataPagamento, payload.datePayment, payload.dueDate, payload.dataLiberacao),
     status,
     paymentCount: Number(payload.paymentCount ?? 0),
     totalAmount: Number(payload.totalAmount ?? 0),
@@ -69,6 +70,14 @@ function normalizeBatch(rawData: unknown, index: number): Lote {
     pendingCount: Number(payload.pendingCount ?? 0),
     payments: Array.isArray(payload.payments) ? payload.payments : []
   };
+}
+
+function firstDate(fieldName: string, ...values: unknown[]) {
+  for (const value of values) {
+    const normalized = normalizeDateValue(value as string | number | Date | null | undefined, fieldName);
+    if (normalized) return normalized;
+  }
+  return null;
 }
 
 function normalizeBatchStatus(value: unknown): Lote["status"] {

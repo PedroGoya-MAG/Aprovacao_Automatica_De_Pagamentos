@@ -27,5 +27,7 @@ const pagnetImportedPayments: PagnetImportedPayment[] = [
 ];
 
 export function getPagnetImportedPaymentsDemo() {
-  return [...pagnetImportedPayments].sort((left, right) => right.importedAt.localeCompare(left.importedAt));
+  return [...pagnetImportedPayments].sort((left, right) =>
+    (right.importedAt ?? "").localeCompare(left.importedAt ?? "")
+  );
 }

@@ -35,7 +35,7 @@ export type HistoricalBatch = Omit<PaymentBatch, "status" | "paymentCount" | "to
   rejectedCount: number;
   pendingCount: number;
   payments: HistoricalPayment[];
-  processedAt: string;
+  processedAt: string | null;
   hasSuspiciousPayments: boolean;
   processingType: HistoryProcessingType;
   processingSummary: HistoricalProcessingSummary;
