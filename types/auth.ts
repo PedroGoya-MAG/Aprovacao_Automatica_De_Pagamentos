@@ -10,6 +10,7 @@ export interface AuthTokenPayload extends Record<string, unknown> {
   exp?: number;
   iat?: number;
   nbf?: number;
+  nonce?: string;
   DashBeneficio?: unknown;
 }
 

@@ -1,46 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAuthCookieSecure, isAuthEnabled } from "@/lib/auth/config";
-import { buildAuthorizeUrl, buildLogoutUrl, createOAuthState } from "@/lib/auth/oauth";
-import { clearAuthSessionCookies } from "@/lib/auth/session";
-import { AUTH_RETURN_TO_COOKIE, AUTH_STATE_COOKIE } from "@/lib/auth/token-session";
+import { getAppBaseUrl, isAuthEnabled } from "@/lib/auth/config";
+import {
+  buildAuthorizeUrl,
+  buildLogoutUrl,
+  createOAuthTransaction,
+  logoutRequiresAuthorizeReturnUrl
+} from "@/lib/auth/oauth";
+import { clearAuthSessionCookies, setAuthTransactionCookies } from "@/lib/auth/session";
+import { AUTH_ID_TOKEN_COOKIE } from "@/lib/auth/token-session";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const loginUrl = new URL("/api/auth/login", request.url);
-  loginUrl.searchParams.set("prompt", "login");
+  const authEnabled = isAuthEnabled();
 
-  if (request.nextUrl.searchParams.get("local") === "true") {
-    const response = NextResponse.redirect(loginUrl);
-    clearAuthSessionCookies(response);
+  if (authEnabled && request.nextUrl.origin !== getAppBaseUrl()) {
+    const canonicalUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, getAppBaseUrl());
+    const response = NextResponse.redirect(canonicalUrl);
+    response.headers.set("Cache-Control", "no-store, max-age=0");
     return response;
   }
 
-  const state = createOAuthState();
-  const authorizeUrl = isAuthEnabled() ? buildAuthorizeUrl(state, { prompt: "login" }) : null;
-  const identidadeLogoutUrl = authorizeUrl ? buildLogoutUrl(authorizeUrl) : null;
-  const response = NextResponse.redirect(identidadeLogoutUrl ?? loginUrl);
+  const loginUrl = new URL("/api/auth/login", authEnabled ? getAppBaseUrl() : request.url);
+  loginUrl.searchParams.set("prompt", "login");
+  const isLocalOnly = request.nextUrl.searchParams.get("local") === "true";
+  const idTokenHint = request.cookies.get(AUTH_ID_TOKEN_COOKIE)?.value;
+  let transaction: Awaited<ReturnType<typeof createOAuthTransaction>> | undefined;
+  let redirectUrl = loginUrl.toString();
+
+  if (!isLocalOnly && authEnabled) {
+    if (logoutRequiresAuthorizeReturnUrl()) {
+      transaction = await createOAuthTransaction();
+      const authorizeUrl = buildAuthorizeUrl(transaction, { prompt: "login", maxAge: 0 });
+      redirectUrl = buildLogoutUrl(authorizeUrl, idTokenHint) ?? redirectUrl;
+    } else {
+      redirectUrl = buildLogoutUrl(loginUrl.toString(), idTokenHint) ?? redirectUrl;
+    }
+  }
+
+  const response = NextResponse.redirect(redirectUrl);
+  response.headers.set("Cache-Control", "no-store, max-age=0");
   clearAuthSessionCookies(response);
 
-  if (identidadeLogoutUrl) {
-    response.cookies.set({
-      name: AUTH_STATE_COOKIE,
-      value: state,
-      httpOnly: true,
-      sameSite: "lax",
-      secure: getAuthCookieSecure(),
-      path: "/",
-      maxAge: 60 * 10
-    });
-
-    response.cookies.set({
-      name: AUTH_RETURN_TO_COOKIE,
-      value: "/",
-      httpOnly: true,
-      sameSite: "lax",
-      secure: getAuthCookieSecure(),
-      path: "/",
-      maxAge: 60 * 10
-    });
+  if (transaction) {
+    setAuthTransactionCookies(response, transaction, "/");
   }
 
   return response;
