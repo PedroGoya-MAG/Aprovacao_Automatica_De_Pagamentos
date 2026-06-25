@@ -41,6 +41,7 @@ import { type BenefitType, type Payment, type PaymentBatch, type PaymentStatus, 
 type DashboardShellProps = {
   initialBatches: PaymentBatch[];
   initialSummary: ResumoDashboard | null;
+  initialLoadError?: string | null;
   role?: DashBeneficioRole;
 };
 
@@ -114,7 +115,7 @@ const emptyBatchAlert: BatchAlert = {
 
 let toastCounter = 0;
 
-export function DashboardShell({ initialBatches, initialSummary, role }: DashboardShellProps) {
+export function DashboardShell({ initialBatches, initialSummary, initialLoadError, role }: DashboardShellProps) {
   const [batches, setBatches] = useState(initialBatches);
   const [filterType, setFilterType] = useState<BenefitFilterOption>("ALL");
   const [filterStatus, setFilterStatus] = useState<StatusFilterOption>("ALL");
@@ -123,12 +124,7 @@ export function DashboardShell({ initialBatches, initialSummary, role }: Dashboa
     Object.fromEntries(initialBatches.map((batch) => [batch.id, false]))
   );
   const [selectedByBatch, setSelectedByBatch] = useState<Record<string, string[]>>(() =>
-    Object.fromEntries(
-      initialBatches.map((batch) => [
-        batch.id,
-        (batch.payments ?? []).filter((payment) => payment.status === "PENDING").map((payment) => payment.id)
-      ])
-    )
+    Object.fromEntries(initialBatches.map((batch) => [batch.id, []]))
   );
   const [reviewedSuspiciousIds, setReviewedSuspiciousIds] = useState<Record<string, boolean>>({});
   const [rejectionReasonsById, setRejectionReasonsById] = useState<Record<string, string>>({});
@@ -513,14 +509,18 @@ export function DashboardShell({ initialBatches, initialSummary, role }: Dashboa
             ? batch
             : {
                 ...batch,
-                payments
+                payments,
+                paymentCount: payments.length,
+                pendingCount: payments.filter((payment) => payment.status === "PENDING").length,
+                approvedCount: payments.filter((payment) => payment.status === "APPROVED").length,
+                rejectedCount: payments.filter((payment) => payment.status === "REJECTED").length
               }
         )
       );
 
       setSelectedByBatch((current) => ({
         ...current,
-        [batchId]: payments.filter((payment) => payment.status === "PENDING").map((payment) => payment.id)
+        [batchId]: []
       }));
 
       setLoadedBatchPayments((current) => ({
@@ -820,10 +820,15 @@ export function DashboardShell({ initialBatches, initialSummary, role }: Dashboa
           <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">Fluxo operacional</span>
         </div>
 
-        {visibleBatches.length === 0 ? (
+        {initialLoadError ? (
           <EmptyState
-            title="Nenhum lote liberado para operacao"
-            description="Os lotes com suspeitas pendentes permanecem concentrados na triagem gerencial acima. Resolva os alertas ou ajuste os filtros para visualizar os demais itens."
+            title="Nao foi possivel carregar os lotes"
+            description={initialLoadError}
+          />
+        ) : visibleBatches.length === 0 ? (
+          <EmptyState
+            title="Nenhum lote encontrado para os filtros selecionados."
+            description="Ajuste os filtros ou tente novamente quando houver lotes pendentes retornados pela API."
           />
         ) : (
           <div className="grid gap-5 xl:grid-cols-1">
@@ -1160,7 +1165,7 @@ type BatchCardProps = {
 function BatchCard(props: BatchCardProps) {
   const { batch, selectedIds, isExpanded, isLoadingPayments, hasLoadedPayments, alertMap, reviewedSuspiciousIds, canManageApprovals, onApproveBatch, onApproveSelected, onExpandToggle, onToggleAllSelections, onPaymentSelectionChange, onPaymentApprove, onPaymentReject, onPaymentRestore, onShowDetails, onToggleReviewed, processingPaymentId, processingBatchId } = props;
   const batchPayments = batch.payments ?? [];
-  const paymentCount = batch.paymentCount ?? batchPayments.length;
+  const paymentCount = batchPayments.length > 0 ? batchPayments.length : batch.paymentCount ?? 0;
   const pendingCount = batch.pendingCount ?? batchPayments.filter((payment) => payment.status === "PENDING").length;
   const approvedCount = batch.approvedCount ?? batchPayments.filter((payment) => payment.status === "APPROVED").length;
   const rejectedCount = batch.rejectedCount ?? batchPayments.filter((payment) => payment.status === "REJECTED").length;

@@ -12,13 +12,24 @@ export async function GET(
 
   try {
     const rawData = await n8nGet<unknown>("approvals", "batch-payments", { loteId });
-    return NextResponse.json(normalizePayments(rawData, loteId));
+    const payments = normalizePayments(rawData, loteId);
+    console.info("[approvals] batch payments loaded", {
+      loteId,
+      source: "api",
+      demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+      usingMock: false,
+      paymentCount: payments.length
+    });
+    return NextResponse.json(payments);
   } catch (error) {
     if (error instanceof N8nApiError) {
-      return NextResponse.json([], { status: error.status });
+      return NextResponse.json({ message: error.message }, { status: error.status });
     }
 
-    return NextResponse.json([], { status: 502 });
+    return NextResponse.json(
+      { message: "Nao foi possivel carregar os pagamentos do lote." },
+      { status: 502 }
+    );
   }
 }
 
@@ -31,7 +42,8 @@ function normalizePayments(rawData: unknown, loteId: string): Payment[] {
   const seen = new Set<string>();
 
   return items
-    .map((item, index) => normalizePayment(item, loteId, index))
+    .map((item) => normalizePayment(item, loteId))
+    .filter((payment): payment is Payment => Boolean(payment))
     .filter((payment) => {
       const dedupeKey = `${payment.id}-${payment.reference}`;
 
@@ -44,19 +56,23 @@ function normalizePayments(rawData: unknown, loteId: string): Payment[] {
     });
 }
 
-function normalizePayment(item: Record<string, unknown>, loteId: string, index: number): Payment {
-  const normalizedId = String(item.id ?? `${loteId}-${index + 1}`);
+function normalizePayment(item: Record<string, unknown>, loteId: string): Payment | null {
+  const normalizedId = pickText(item.id);
+
+  if (!normalizedId) {
+    return null;
+  }
 
   return {
     id: normalizedId,
     loteId,
-    beneficiaryName: pickText(item.beneficiaryName, "Beneficiario nao informado"),
-    document: pickText(item.document, "-"),
+    beneficiaryName: pickText(item.beneficiaryName, "Beneficiario nao informado") ?? "Beneficiario nao informado",
+    document: pickText(item.document, "-") ?? "-",
     grossAmount: Number(item.grossAmount ?? 0),
     paymentDate: firstDate("payment.paymentDate", item.paymentDate, item.dataPagamento, item.datePayment, item.dueDate),
     benefitType: item.benefitType === "SORTEIO" ? "SORTEIO" : "RESGATE",
     status: normalizeStatus(item.status),
-    reference: pickText(item.reference, normalizedId)
+    reference: pickText(item.reference, normalizedId) ?? normalizedId
   };
 }
 
@@ -80,7 +96,7 @@ function normalizeStatus(value: unknown): Payment["status"] {
   return "PENDING";
 }
 
-function pickText(value: unknown, fallback: string) {
+function pickText(value: unknown, fallback?: string) {
   if (typeof value === "string" && value.trim()) {
     return value.trim();
   }
@@ -88,6 +104,10 @@ function pickText(value: unknown, fallback: string) {
   if (Array.isArray(value)) {
     const firstValid = value.find((item) => typeof item === "string" && item.trim());
     return typeof firstValid === "string" ? firstValid.trim() : fallback;
+  }
+
+  if (typeof value === "number") {
+    return String(value);
   }
 
   return fallback;

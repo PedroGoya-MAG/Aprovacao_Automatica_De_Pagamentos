@@ -11,8 +11,15 @@ type DashboardSummaryFilters = {
 
 export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) {
   if (isDemoMode()) {
-    return getDemoResumoDashboard(filters);
+    const summary = getDemoResumoDashboard(filters);
+    logSummaryLoaded("mock", summary);
+    return summary;
   }
+
+  console.info("[approvals] client loading summary", {
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: false
+  });
 
   const query = buildSummaryQuery(filters);
   const response = await fetch(`/api/aprovacoes/resumo${query}`, {
@@ -24,15 +31,26 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
     throw new Error("Nao foi possivel carregar o resumo da dashboard.");
   }
 
-  return (await response.json()) as ResumoDashboard;
+  const summary = (await response.json()) as ResumoDashboard;
+  logSummaryLoaded("api", summary);
+  return summary;
 }
 
 export async function getResumoDashboardServer(filters: DashboardSummaryFilters = {}) {
   if (isDemoMode()) {
-    return getDemoResumoDashboard(filters);
+    const summary = getDemoResumoDashboard(filters);
+    logSummaryLoaded("mock", summary);
+    return summary;
   }
 
-  return n8nGet<ResumoDashboard>("approvals", "summary", buildSummaryParams(filters));
+  console.info("[approvals] loading summary", {
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: false
+  });
+
+  const summary = await n8nGet<ResumoDashboard>("approvals", "summary", buildSummaryParams(filters));
+  logSummaryLoaded("api", summary);
+  return summary;
 }
 
 function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
@@ -81,4 +99,14 @@ function buildSummaryParams(filters: DashboardSummaryFilters = {}) {
   }
 
   return params;
+}
+
+function logSummaryLoaded(source: "api" | "mock", summary: ResumoDashboard) {
+  console.info("[approvals] summary loaded", {
+    source,
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: source === "mock",
+    batchCount: summary.pendingBatchCount,
+    paymentCount: summary.pendingPaymentCount
+  });
 }

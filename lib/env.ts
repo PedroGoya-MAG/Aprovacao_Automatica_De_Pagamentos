@@ -13,7 +13,21 @@ function getRequiredEnvValue(key: string) {
 }
 
 export function getN8nApiUrl() {
-  return getRequiredEnvValue("NEXT_PUBLIC_N8N_API_URL");
+  const value = readEnvValue("N8N_API_URL") || readEnvValue("NEXT_PUBLIC_N8N_API_URL");
+
+  if (!value) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[env] API base URL ausente. Configure N8N_API_URL no servidor ou NEXT_PUBLIC_N8N_API_URL para compatibilidade.");
+    }
+
+    throw new Error("Variavel de ambiente obrigatoria nao configurada: N8N_API_URL ou NEXT_PUBLIC_N8N_API_URL.");
+  }
+
+  return value;
+}
+
+export function getApiAuthToken() {
+  return readEnvValue("API_AUTH_TOKEN");
 }
 
 export function getApiRequestTimeoutMs() {

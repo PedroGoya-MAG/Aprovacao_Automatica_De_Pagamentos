@@ -114,21 +114,25 @@ Acesse: [http://localhost:3000](http://localhost:3000)
 
 ## Variaveis de ambiente
 
-- NEXT_PUBLIC_PORTAL_TITLE: titulo exibido no cabecalho.
-- NEXT_PUBLIC_DEMO_MODE: quando `true`, usa dados locais de demonstracao e nao depende da VPN.
+- `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.
+- `NEXT_PUBLIC_DEMO_MODE`: quando `true`, usa dados locais de demonstracao e nao depende da VPN. Como e lida tambem em Client Components, precisa manter o prefixo `NEXT_PUBLIC_`.
 - `NEXT_PUBLIC_APP_ENV`: ambiente exibido ou utilizado pelo projeto, se necessario.
-- `NEXT_PUBLIC_N8N_API_URL`: endpoint unico do roteador central do n8n.
-- API_AUTH_TOKEN: token server-side opcional para autenticacao futura.
+- `N8N_API_URL`: endpoint unico do roteador central do n8n para chamadas server-side. Use esta variavel na Vercel/HMG.
+- `NEXT_PUBLIC_N8N_API_URL`: compatibilidade com configuracoes antigas. O browser nao chama esta URL diretamente na tela de aprovacoes; as chamadas client-side vao para os Route Handlers em `/api/...`.
+- `API_AUTH_TOKEN`: token server-side opcional enviado como `Authorization: Bearer ...` nas chamadas ao backend. Nao use prefixo `NEXT_PUBLIC_`.
+- `API_REQUEST_TIMEOUT_MS`: timeout server-side das chamadas ao backend.
 
-Fora do modo demonstracao, a tela de aprovacoes usa o roteador central do n8n e envia `screen` e `action` para diferenciar cada operacao.
+Fora do modo demonstracao, a tela de aprovacoes usa o roteador central do n8n e envia `screen` e `action` para diferenciar cada operacao. Se `N8N_API_URL` e `NEXT_PUBLIC_N8N_API_URL` estiverem ausentes, a tela principal exibe erro controlado; ela nao cai em mock silencioso.
 
 ### Exemplo
 
 ```env
 NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_N8N_API_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
+NEXT_PUBLIC_DEMO_MODE=false
+N8N_API_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
 API_AUTH_TOKEN=
+API_REQUEST_TIMEOUT_MS=30000
 ```
 
 ### Padrao de chamadas do n8n
@@ -136,8 +140,8 @@ API_AUTH_TOKEN=
 GET:
 
 ```http
-GET {NEXT_PUBLIC_N8N_API_URL}?screen=approvals&action=summary
-GET {NEXT_PUBLIC_N8N_API_URL}?screen=approvals&action=batch-payments&loteId=LOT-RES-20131002
+GET {N8N_API_URL}?screen=approvals&action=summary
+GET {N8N_API_URL}?screen=approvals&action=batch-payments&loteId=LOT-RES-20131002
 ```
 
 POST:
