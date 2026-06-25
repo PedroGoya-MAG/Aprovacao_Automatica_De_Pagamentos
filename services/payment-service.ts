@@ -11,17 +11,25 @@ type LotesFilters = {
 
 export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
   if (isDemoMode()) {
-    return getDemoLotes(filters);
+    const batches = getDemoLotes(filters);
+    logBatchesLoaded("mock", batches);
+    return batches;
   }
 
+  logBatchesLoadStart();
   const data = await n8nGet<unknown>("approvals", "batches", buildApprovalsBatchesParams(filters));
 
   if (!Array.isArray(data)) {
+    logBatchesLoaded("api", []);
     return [];
   }
 
-  const normalized = data.map((batch, index) => normalizeBatch(batch, index));
-  return filterOperationalBatches(normalized, filters);
+  const normalized = data
+    .map((batch) => normalizeBatch(batch))
+    .filter((batch): batch is Lote => Boolean(batch));
+  const batches = filterOperationalBatches(normalized, filters);
+  logBatchesLoaded("api", batches);
+  return batches;
 }
 
 export const paymentService = {
@@ -49,10 +57,15 @@ function buildApprovalsBatchesParams(filters: LotesFilters) {
   return params;
 }
 
-function normalizeBatch(rawData: unknown, index: number): Lote {
+function normalizeBatch(rawData: unknown): Lote | null {
   const payload = typeof rawData === "object" && rawData !== null ? (rawData as Record<string, unknown>) : {};
-  const id = pickText(payload.id, `lote-${index + 1}`);
-  const batchNumber = pickText(payload.batchNumber, id);
+  const id = pickText(payload.id);
+
+  if (!id) {
+    return null;
+  }
+
+  const batchNumber = pickText(payload.batchNumber, id) ?? id;
   const benefitType = payload.benefitType === "SORTEIO" ? "SORTEIO" : "RESGATE";
   const status = normalizeBatchStatus(payload.status);
 
@@ -60,7 +73,7 @@ function normalizeBatch(rawData: unknown, index: number): Lote {
     id,
     batchNumber,
     benefitType,
-    competence: pickText(payload.competence, "-"),
+    competence: pickText(payload.competence, "-") ?? "-",
     scheduledAt: firstDate("batch.scheduledAt", payload.scheduledAt, payload.dataPagamento, payload.datePayment, payload.dueDate, payload.dataLiberacao),
     status,
     paymentCount: Number(payload.paymentCount ?? 0),
@@ -96,7 +109,7 @@ function normalizeBatchStatus(value: unknown): Lote["status"] {
   return "PENDING";
 }
 
-function pickText(value: unknown, fallback: string) {
+function pickText(value: unknown, fallback?: string) {
   if (typeof value === "string" && value.trim()) {
     return value.trim();
   }
@@ -106,6 +119,23 @@ function pickText(value: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function logBatchesLoadStart() {
+  console.info("[approvals] loading batches", {
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: false
+  });
+}
+
+function logBatchesLoaded(source: "api" | "mock", batches: Lote[]) {
+  console.info("[approvals] batches loaded", {
+    source,
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: source === "mock",
+    batchCount: batches.length,
+    paymentCount: batches.reduce((total, batch) => total + (batch.payments?.length ?? batch.paymentCount ?? 0), 0)
+  });
 }
 
 function filterOperationalBatches(batches: Lote[], filters: LotesFilters) {
