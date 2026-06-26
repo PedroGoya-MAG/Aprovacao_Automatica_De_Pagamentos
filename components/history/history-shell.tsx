@@ -226,7 +226,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--brand)]">Historico geral</p>
           <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Consulta de lotes e pagamentos processados</h2>
           <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            Acompanhe o que entrou, foi aprovado, rejeitado ou sinalizado para revisao ao longo do periodo, com leitura executiva por lote e detalhamento completo dos pagamentos processados.
+            Acompanhe o que entrou, foi aprovado, rejeitado ou sinalizado para revisão ao longo do período, com leitura executiva por lote e detalhamento completo dos pagamentos processados.
           </p>
         </div>
       </section>
@@ -235,14 +235,14 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
         <SummaryCard label="Lotes aprovados" value={String(summary.approvedBatchCount)} hint="Processados sem rejeicao" icon={ShieldCheck} tone="success" />
         <SummaryCard label="Lotes mistos" value={String(summary.mixedBatchCount)} hint="Com aprovados e rejeitados" icon={Layers3} tone="warning" />
         <SummaryCard label="Lotes rejeitados" value={String(summary.rejectedBatchCount)} hint="Todos os pagamentos rejeitados" icon={ShieldAlert} tone="danger" />
-        <SummaryCard label="Pagamentos suspeitos" value={String(summary.suspiciousPaymentCount)} hint="Itens com alerta no historico" icon={ShieldAlert} tone="warning" />
+        <SummaryCard label="Pagamentos suspeitos" value={String(summary.suspiciousPaymentCount)} hint="Itens com alerta no histórico" icon={ShieldAlert} tone="warning" />
         <SummaryCard label="Valor aprovado" value={formatCurrency(summary.totalApprovedAmount)} hint="Montante liberado" icon={CircleDollarSign} tone="success" />
         <SummaryCard label="Valor rejeitado" value={formatCurrency(summary.totalRejectedAmount)} hint="Montante recusado" icon={Wallet} tone="danger" />
       </section>
 
       <section className="panel px-5 py-5 sm:px-6">
         <div className="grid gap-4 xl:grid-cols-[220px_220px_220px_220px_minmax(0,1fr)]">
-          <SelectField label="Competencia" value={selectedCompetence} onChange={setSelectedCompetence}>
+          <SelectField label="Competência" value={selectedCompetence} onChange={setSelectedCompetence}>
             <option value="ALL">Todas</option>
             {competences.map((competence) => (
               <option key={competence} value={competence}>
@@ -251,7 +251,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
             ))}
           </SelectField>
 
-          <SelectField label="Tipo de beneficio" value={selectedType} onChange={(value) => setSelectedType(value as BenefitFilter)}>
+          <SelectField label="Tipo de benefício" value={selectedType} onChange={(value) => setSelectedType(value as BenefitFilter)}>
             <option value="ALL">Todos</option>
             <option value="SORTEIO">Sorteio</option>
             <option value="RESGATE">Resgate</option>
@@ -279,7 +279,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Lote, beneficiario ou documento"
+                placeholder="Lote, beneficiário ou documento"
                 className="h-full w-full border-0 bg-transparent text-sm outline-none"
               />
             </div>
@@ -290,14 +290,14 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
           <button
             type="button"
             onClick={() => setShowOnlySuspicious((current) => !current)}
-            className={showOnlySuspicious ? "data-chip cursor-pointer bg-amber-50 text-amber-800" : "data-chip cursor-pointer"}
+            className={showOnlySuspicious ? "filter-chip border-amber-300 bg-amber-50 text-amber-800" : "filter-chip"}
           >
             Somente suspeitos
           </button>
           <button
             type="button"
             onClick={() => setShowOnlyRejected((current) => !current)}
-            className={showOnlyRejected ? "data-chip cursor-pointer bg-rose-50 text-rose-700" : "data-chip cursor-pointer"}
+            className={showOnlyRejected ? "filter-chip border-rose-300 bg-rose-50 text-rose-700" : "filter-chip"}
           >
             Rejeitados
           </button>
@@ -307,8 +307,8 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
       <section className="space-y-4">
         {visibleBatches.length === 0 ? (
           <EmptyState
-            title="Nenhum lote encontrado no historico"
-            description="Ajuste os filtros para consultar outros periodos, tipos de beneficio ou pagamentos processados."
+            title="Nenhum lote encontrado no histórico"
+            description="Ajuste os filtros para consultar outros períodos, tipos de benefício ou pagamentos processados."
           />
         ) : (
           visibleBatches.map((batch) => {
@@ -327,7 +327,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
-                      <BatchInfo label="Competencia" value={batch.competence} />
+                      <BatchInfo label="Competência" value={batch.competence} />
                       <BatchInfo label="Data prevista" value={formatDate(batch.scheduledAt, "batch.scheduledAt")} />
                       <BatchInfo label="Processado em" value={formatDate(batch.processedAt, "batch.processedAt")} />
                       <BatchInfo label="Processamento" value={formatProcessingType(batch.processingType)} />
@@ -337,10 +337,10 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                       <BatchInfo label="Valor rejeitado" value={formatCurrency(batch.rejectedAmount)} />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600">
                       <BatchOutcomeInline batch={batch} />
                       <span className="data-chip">Manual: {batch.processingSummary.manualCount}</span>
-                      <span className="data-chip">Automatica: {batch.processingSummary.automaticCount}</span>
+                      <span className="data-chip">Automática: {batch.processingSummary.automaticCount}</span>
                     </div>
                   </div>
 
@@ -360,7 +360,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                       </div>
                     ) : batch.payments.length === 0 ? (
                       <div className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-5 text-sm leading-6 text-slate-600">
-                        Nenhum pagamento foi retornado para este lote historico.
+                        Nenhum pagamento foi retornado para este lote histórico.
                       </div>
                     ) : (
                     <div className="overflow-x-auto rounded-xl border border-[color:var(--border)] bg-white">
@@ -374,7 +374,7 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
                             <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3">Motivo da rejeicao</th>
                             <th className="px-4 py-3">Alertas</th>
-                            <th className="px-4 py-3 text-right">Acao</th>
+                            <th className="px-4 py-3 text-right">Ação</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -456,7 +456,7 @@ function SummaryCard({ label, value, hint, icon: Icon, tone }: { label: string; 
 
 function BatchInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3">
+    <div className="rounded-xl bg-[color:var(--surface-muted)] px-4 py-3">
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
@@ -527,7 +527,7 @@ function formatProcessingType(processingType: HistoricalBatch["processingType"])
   }
 
   if (processingType === "AUTOMATICA") {
-    return "Automatica";
+    return "Automática";
   }
 
   return "Mista";
@@ -536,19 +536,19 @@ function formatProcessingType(processingType: HistoricalBatch["processingType"])
 function OutcomeChip({ children, tone }: { children: React.ReactNode; tone: "success" | "danger" | "warning" | "mixed" }) {
   const toneClass =
     tone === "success"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      ? "bg-emerald-50 text-emerald-800"
       : tone === "danger"
-        ? "border-rose-200 bg-rose-50 text-rose-700"
+        ? "bg-rose-50 text-rose-700"
         : tone === "warning"
-          ? "border-amber-200 bg-amber-50 text-amber-800"
-          : "border-sky-200 bg-sky-50 text-sky-800";
+          ? "bg-amber-50 text-amber-800"
+          : "bg-sky-50 text-sky-800";
 
-  return <span className={`inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${toneClass}`}>{children}</span>;
+  return <span className={`inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${toneClass}`}>{children}</span>;
 }
 
 function SuspiciousInlineBadge({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800">
+    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800">
       {label}
     </span>
   );
@@ -566,7 +566,7 @@ function HistoryPaymentDrawer({ batch, payment, onClose }: { batch?: VisibleHist
         <div className="border-b border-[color:var(--border)] px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--brand)]">Detalhes do historico</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--brand)]">Detalhes do histórico</p>
               <h3 className="text-2xl font-semibold tracking-[-0.03em] text-slate-950">{payment.beneficiaryName}</h3>
               <div className="flex flex-wrap items-center gap-2">
                 <StatusBadge status={payment.status} />
@@ -582,25 +582,25 @@ function HistoryPaymentDrawer({ batch, payment, onClose }: { batch?: VisibleHist
           <DetailGridItem icon={FileBadge2} label="Documento" value={formatDocument(payment.document)} />
           <DetailGridItem icon={Wallet} label="Valor bruto" value={formatCurrency(payment.grossAmount)} />
           <DetailGridItem icon={ShieldAlert} label="Lote" value={batch.batchNumber} />
-          <DetailGridItem icon={ShieldAlert} label="Competencia" value={batch.competence} />
+          <DetailGridItem icon={ShieldAlert} label="Competência" value={batch.competence} />
           <DetailGridItem icon={CalendarClock} label="Data do pagamento" value={formatDate(payment.paymentDate, "payment.paymentDate")} />
           <DetailGridItem icon={CalendarClock} label="Processado em" value={formatDate(payment.processedAt, "payment.processedAt")} />
           <DetailGridItem icon={ShieldAlert} label="Tipo de processamento" value={payment.processingType === "MANUAL" ? "Manual" : "Automatico"} />
 
           <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Motivo da rejeicao</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Motivo da rejeição</p>
             <p className="mt-2 text-sm leading-6 text-slate-700">{getRejectionReason(payment)}</p>
           </section>
 
           <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Observacoes</p>
-            <p className="mt-2 text-sm leading-6 text-slate-700">{payment.observations ?? "Sem observacoes adicionais registradas para este pagamento no historico."}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Observações</p>
+            <p className="mt-2 text-sm leading-6 text-slate-700">{payment.observations ?? "Sem observações adicionais registradas para este pagamento no histórico."}</p>
           </section>
 
           <section className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Sinais identificados</p>
             <p className="mt-2 text-sm leading-6 text-slate-700">
-              {payment.isSuspicious ? payment.suspicionReasons.map(formatReasonLabel).join(" • ") : "Pagamento sem sinais de alerta no periodo consultado."}
+              {payment.isSuspicious ? payment.suspicionReasons.map(formatReasonLabel).join(" • ") : "Pagamento sem sinais de alerta no período consultado."}
             </p>
           </section>
         </div>
@@ -630,12 +630,12 @@ function getRejectionReason(payment: HistoricalPayment) {
     return "-";
   }
 
-  return payment.rejectionReason?.trim() || payment.observations?.trim() || "Motivo nao informado no historico.";
+  return payment.rejectionReason?.trim() || payment.observations?.trim() || "Motivo não informado no histórico.";
 }
 
 function formatReasonLabel(reason: SuspicionReasonCode) {
   if (reason === "HIGH_VALUE") {
-    return "Valor acima de 2x a media";
+    return "Valor acima de 2x a média";
   }
 
   if (reason === "DUPLICATE_BENEFICIARY") {
@@ -643,8 +643,8 @@ function formatReasonLabel(reason: SuspicionReasonCode) {
   }
 
   if (reason === "SINGLE_CONCENTRATION") {
-    return "Mais de 40% do lote em um beneficiario";
+    return "Mais de 40% do lote em um beneficiário";
   }
 
-  return "Dois beneficiarios concentram a maior parte do lote";
+  return "Dois beneficiários concentram a maior parte do lote";
 }

@@ -98,11 +98,7 @@ textarea { font: inherit; }
 
 @layer components {
   .panel {
-    @apply rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface)] shadow-[var(--shadow-panel)] transition duration-200;
-  }
-  .panel:hover {
-    border-color: var(--border-strong);
-    box-shadow: rgba(6, 30, 46, 0.1) 0px 6px 14px 0px;
+    @apply rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface)] shadow-[var(--shadow-panel)];
   }
   .panel-glass {
     @apply rounded-[var(--radius-lg)] border border-[color:var(--glass-border-light)] shadow-[var(--shadow-soft)];
@@ -114,11 +110,13 @@ textarea { font: inherit; }
     background: var(--mag-dark-gradient);
   }
   .sub-panel {
-    @apply rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-soft)] transition duration-200;
+    @apply rounded-[var(--radius-lg)] border border-[color:var(--border)] bg-[color:var(--surface-strong)] shadow-[var(--shadow-soft)];
   }
-  .sub-panel:hover { border-color: var(--border-strong); }
   .data-chip {
     @apply inline-flex items-center rounded-full bg-[color:var(--surface-muted)] px-3 py-1 text-xs font-medium text-slate-600;
+  }
+  .filter-chip {
+    @apply inline-flex cursor-pointer items-center rounded-full border border-[color:var(--border-strong)] bg-white px-3 py-1 text-xs font-semibold text-[color:var(--brand-deep)] transition hover:border-[color:var(--brand)] hover:bg-[color:var(--brand-soft)];
   }
   .mag-input {
     @apply h-11 w-full rounded-lg border border-[color:var(--border)] bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand-soft)];
