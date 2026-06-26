@@ -24,36 +24,32 @@ type GroupedPayments = {
 };
 
 export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProps) {
-  const [importedFrom, setImportedFrom] = useState("");
-  const [importedTo, setImportedTo] = useState("");
-  const [search, setSearch] = useState("");
-  const [amountMin, setAmountMin] = useState("");
-
-  const hasActiveFilters =
-    importedFrom.trim().length > 0 ||
-    importedTo.trim().length > 0 ||
-    search.trim().length > 0 ||
-    amountMin.trim().length > 0;
-
   const latestImportedDate = useMemo(() => {
     return initialPayments.reduce((latest, payment) => {
       const current = payment.importedAt?.slice(0, 10) ?? "";
       return current > latest ? current : latest;
     }, initialPayments[0]?.importedAt?.slice(0, 10) ?? "");
   }, [initialPayments]);
+  const defaultImportedFrom = latestImportedDate ? shiftDate(latestImportedDate, -14) : "";
+  const defaultImportedTo = latestImportedDate;
+  const [importedFrom, setImportedFrom] = useState(defaultImportedFrom);
+  const [importedTo, setImportedTo] = useState(defaultImportedTo);
+  const [search, setSearch] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+
+  const hasActiveFilters =
+    importedFrom !== defaultImportedFrom ||
+    importedTo !== defaultImportedTo ||
+    search.trim().length > 0 ||
+    amountMin.trim().length > 0;
 
   const visiblePayments = useMemo(() => {
     const normalizedSearch = normalizeText(search);
     const parsedAmountMin = Number(amountMin.replace(",", "."));
     const hasAmountMin = amountMin.trim().length > 0 && Number.isFinite(parsedAmountMin);
-    const defaultWindowStart = latestImportedDate ? shiftDate(latestImportedDate, -14) : "";
 
     return initialPayments.filter((payment) => {
       const importedDate = payment.importedAt?.slice(0, 10) ?? "";
-      const matchesDefaultWindow =
-        !hasActiveFilters && latestImportedDate
-          ? importedDate >= defaultWindowStart && importedDate <= latestImportedDate
-          : true;
       const matchesImportedFrom = importedFrom ? importedDate >= importedFrom : true;
       const matchesImportedTo = importedTo ? importedDate <= importedTo : true;
       const matchesSearch =
@@ -62,9 +58,9 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         normalizeText(payment.customerDocument).includes(normalizedSearch);
       const matchesAmount = hasAmountMin ? payment.amount >= parsedAmountMin : true;
 
-      return matchesDefaultWindow && matchesImportedFrom && matchesImportedTo && matchesSearch && matchesAmount;
+      return matchesImportedFrom && matchesImportedTo && matchesSearch && matchesAmount;
     });
-  }, [amountMin, hasActiveFilters, importedFrom, importedTo, initialPayments, latestImportedDate, search]);
+  }, [amountMin, importedFrom, importedTo, initialPayments, search]);
 
   const groupedPayments = useMemo<GroupedPayments[]>(() => {
     const map = new Map<string, GroupedPayments>();
@@ -93,16 +89,21 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
   }, [visiblePayments]);
 
   const totalVisibleAmount = visiblePayments.reduce((total, payment) => total + payment.amount, 0);
+  const latestImportedLabel = latestImportedDate ? formatLongDate(latestImportedDate, "payment.importedAt") : "Sem importações carregadas";
 
   return (
     <div className="space-y-6">
       <section className="panel px-5 py-5 sm:px-6">
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--brand)]">Tesouraria</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Importacoes no PagNet</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Importações no PagNet</h2>
           <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            Consulte os pagamentos importados para o PagNet com leitura operacional por dia de importacao, busca rapida e filtros simples para acompanhamento do time de tesouraria.
+            Consulte os pagamentos importados para o PagNet com leitura operacional por dia de importação, busca rápida e filtros simples para acompanhamento do time de tesouraria.
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="data-chip">Última importação: {latestImportedLabel}</span>
+            <span className="data-chip">Janela padrão: últimos 15 dias</span>
+          </div>
         </div>
       </section>
 
@@ -112,11 +113,11 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
             <input type="date" value={importedFrom} onChange={(event) => setImportedFrom(event.target.value)} className="mag-input" />
           </FilterField>
 
-          <FilterField label="Importado ate">
+          <FilterField label="Importado até">
             <input type="date" value={importedTo} onChange={(event) => setImportedTo(event.target.value)} className="mag-input" />
           </FilterField>
 
-          <FilterField label="Busca rapida por nome ou documento">
+          <FilterField label="Busca rápida por nome ou documento">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -128,7 +129,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
             </div>
           </FilterField>
 
-          <FilterField label="Valor minimo">
+          <FilterField label="Valor mínimo">
             <input
               type="number"
               min="0"
@@ -147,8 +148,8 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
               size="sm"
               disabled={!hasActiveFilters}
               onClick={() => {
-                setImportedFrom("");
-                setImportedTo("");
+                setImportedFrom(defaultImportedFrom);
+                setImportedTo(defaultImportedTo);
                 setSearch("");
                 setAmountMin("");
               }}
@@ -159,7 +160,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          {!hasActiveFilters ? <span className="data-chip">Ultimos 15 dias carregados automaticamente</span> : null}
+          {!hasActiveFilters ? <span className="data-chip">Período padrão: últimos 15 dias carregados</span> : null}
           <span className="data-chip">{visiblePayments.length} pagamento(s)</span>
           <span className="data-chip">{formatCurrency(totalVisibleAmount)}</span>
         </div>
@@ -168,8 +169,8 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
       <section className="space-y-4">
         {groupedPayments.length === 0 ? (
           <EmptyState
-            title="Nenhuma importacao encontrada"
-            description="Ajuste o periodo, a busca ou o valor minimo para consultar outros pagamentos importados no PagNet."
+            title="Nenhuma importação encontrada"
+            description="Ajuste o período, a busca ou o valor mínimo para consultar outros pagamentos importados no PagNet."
           />
         ) : (
           groupedPayments.map((group) => (
@@ -180,7 +181,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
                     <CalendarRange className="h-4 w-4 text-[color:var(--brand)]" />
                     {group.title}
                   </div>
-                  <p className="text-sm text-slate-600">Importacoes registradas no PagNet nesta data.</p>
+                  <p className="text-sm text-slate-600">Importações registradas no PagNet nesta data.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="data-chip">{group.paymentCount} pagamento(s)</span>
@@ -231,8 +232,8 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
 
 function FilterField({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="space-y-2 text-sm text-slate-700">
-      <span className="font-semibold">{label}</span>
+    <label className="flex flex-col gap-2 text-sm text-slate-700">
+      <span className="min-h-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</span>
       {children}
     </label>
   );

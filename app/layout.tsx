@@ -11,8 +11,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Portal de Aprovacao de Pagamentos",
-  description: "Dashboard interno para aprovacao de pagamentos de beneficios."
+  title: "Portal de Aprovação de Pagamentos",
+  description: "Dashboard interno para aprovação de pagamentos de benefícios."
 };
 
 export default function RootLayout({

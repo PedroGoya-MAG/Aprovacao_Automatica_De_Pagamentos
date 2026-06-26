@@ -9,9 +9,9 @@ import { getServerSession } from "@/lib/auth/session";
 type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
 
 const navItems: Array<{ label: string; icon: typeof ClipboardCheck; href: Route; value: AppHeaderTab }> = [
-  { label: "Aprovacoes", icon: ClipboardCheck, href: "/" as Route, value: "approvals" },
-  { label: "Historico", icon: History, href: "/historico" as Route, value: "history" },
-  { label: "Visao mensal", icon: CalendarRange, href: "/visao-mensal" as Route, value: "monthly" },
+  { label: "Aprovações", icon: ClipboardCheck, href: "/" as Route, value: "approvals" },
+  { label: "Histórico", icon: History, href: "/historico" as Route, value: "history" },
+  { label: "Visão mensal", icon: CalendarRange, href: "/visao-mensal" as Route, value: "monthly" },
   { label: "Tesouraria", icon: Building2, href: "/tesouraria" as Route, value: "treasury" }
 ];
 
@@ -20,38 +20,37 @@ const activeDescriptions: Record<
   { eyebrow: string; description: string; sideTitle: string; sideText: string }
 > = {
   approvals: {
-    eyebrow: "Aprovacoes",
+    eyebrow: "Aprovações",
     description:
-      "Acompanhe lotes, avalie pagamentos e conduza aprovacoes com uma visao clara, objetiva e alinhada ao fluxo interno da CAP.",
-    sideTitle: "Operacao de aprovacao",
-    sideText: "Painel preparado para decisao rapida por lote, com filtros, detalhes individuais e visao consolidada da operacao."
+      "Acompanhe lotes, avalie pagamentos e conduza aprovações com uma visão clara, objetiva e alinhada ao fluxo interno da CAP.",
+    sideTitle: "Operação de aprovação",
+    sideText: "Painel preparado para decisão rápida por lote, com filtros, detalhes individuais e visão consolidada da operação."
   },
   history: {
-    eyebrow: "Historico",
+    eyebrow: "Histórico",
     description:
-      "Consulte lotes e pagamentos ja processados com foco em rastreabilidade, leitura executiva e analise posterior da operacao.",
-    sideTitle: "Consulta historica",
-    sideText: "Visao orientada a consulta e revisao, com filtros por competencia, status, beneficio e alertas ja identificados."
+      "Consulte lotes e pagamentos já processados com foco em rastreabilidade, leitura executiva e análise posterior da operação.",
+    sideTitle: "Consulta histórica",
+    sideText: "Visão orientada a consulta e revisão, com filtros por competência, status, benefício e alertas já identificados."
   },
   monthly: {
-    eyebrow: "Visao mensal",
+    eyebrow: "Visão mensal",
     description:
-      "Acompanhe o comportamento do mes com indicadores, volumes recebidos e sinais de atencao para leitura gerencial da operacao.",
+      "Acompanhe o comportamento do mês com indicadores, volumes recebidos e sinais de atenção para leitura gerencial da operação.",
     sideTitle: "Leitura gerencial",
-    sideText: "Area preparada para acompanhar totais do mes, motivos de suspeita e comportamento diario e semanal dos pagamentos."
+    sideText: "Área preparada para acompanhar totais do mês, motivos de suspeita e comportamento diário e semanal dos pagamentos."
   },
   treasury: {
     eyebrow: "Tesouraria",
     description:
-      "Consulte os pagamentos importados no PagNet com visao operacional por data de importacao, busca rapida e filtros objetivos.",
-    sideTitle: "Monitoramento de importacoes",
-    sideText: "Tela somente leitura para acompanhamento do que ja foi importado para o PagNet, agrupado por dia de importacao."
+      "Consulte os pagamentos importados no PagNet com visão operacional por data de importação, busca rápida e filtros objetivos.",
+    sideTitle: "Monitoramento de importações",
+    sideText: "Tela somente leitura para acompanhamento do que já foi importado para o PagNet, agrupado por dia de importação."
   }
 };
 
 export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTab }) {
-  const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovacao de Pagamentos";
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovação de Pagamentos";
   const activeContent = activeDescriptions[activeTab];
   const session = await getServerSession();
   const visibleNavItems = session ? navItems.filter((item) => canAccessTab(session.user.role, item.value)) : navItems;
@@ -63,7 +62,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
           <div className="flex items-center gap-5">
             <Image
               src="/mag-capitalizacao-logo.svg"
-              alt="MAG Capitalizacao"
+              alt="MAG Capitalização"
               width={220}
               height={58}
               className="h-auto w-[150px] sm:w-[180px]"
@@ -71,15 +70,12 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
             />
             <div className="hidden h-8 w-px bg-[color:var(--border)] lg:block" />
             <div className="hidden text-sm text-slate-600 lg:block">
-              <p className="font-semibold text-slate-900">Gestao de beneficios</p>
-              <p>Aprovacao operacional de pagamentos</p>
+              <p className="font-semibold text-slate-900">Gestão de benefícios</p>
+              <p>Aprovação operacional de pagamentos</p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="data-chip">Uso corporativo</span>
-            <span className="data-chip">Fluxo operacional</span>
-            {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
             {session ? <span className="data-chip">{formatRoleLabel(session.user.role)}</span> : null}
             {session ? <span className="data-chip">{session.user.name}</span> : null}
             {session ? (
@@ -103,7 +99,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
               <p className="max-w-3xl text-base leading-7 text-slate-600">{activeContent.description}</p>
             </div>
 
-            <nav aria-label="Navegacao principal do portal" className="border-b border-[color:var(--border)]">
+            <nav aria-label="Navegação principal do portal" className="border-b border-[color:var(--border)]">
               <ul className="flex flex-wrap items-center gap-1 sm:gap-4">
                 {visibleNavItems.map((item) => {
                   const Icon = item.icon;
