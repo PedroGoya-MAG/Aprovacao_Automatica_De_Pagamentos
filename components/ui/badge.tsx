@@ -12,11 +12,11 @@ type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
 };
 
 const toneStyles: Record<BadgeTone, string> = {
-  default: "border-[color:rgba(16,115,201,0.28)] bg-[color:rgba(16,115,201,0.1)] text-[color:var(--brand-strong)]",
-  success: "border-[color:rgba(44,201,16,0.32)] bg-[color:rgba(44,201,16,0.12)] text-green-800",
-  warning: "border-[color:rgba(245,159,0,0.4)] bg-[color:rgba(245,159,0,0.14)] text-amber-800",
-  info: "border-[color:rgba(0,120,168,0.32)] bg-[color:rgba(0,120,168,0.12)] text-cyan-800",
-  error: "border-[color:rgba(217,45,32,0.32)] bg-[color:rgba(217,45,32,0.1)] text-red-800"
+  default: "bg-[color:rgba(16,115,201,0.1)] text-[color:var(--brand-strong)]",
+  success: "bg-[color:rgba(44,201,16,0.12)] text-green-800",
+  warning: "bg-[color:rgba(245,159,0,0.14)] text-amber-800",
+  info: "bg-[color:rgba(0,120,168,0.12)] text-cyan-800",
+  error: "bg-[color:rgba(217,45,32,0.1)] text-red-800"
 };
 
 const sizeStyles: Record<BadgeSize, string> = {
@@ -29,7 +29,7 @@ export function Badge({ className, tone = "default", size = "md", children, ...p
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border font-medium leading-none",
+        "inline-flex items-center gap-1.5 rounded-full font-medium leading-none",
         toneStyles[tone],
         sizeStyles[size],
         className

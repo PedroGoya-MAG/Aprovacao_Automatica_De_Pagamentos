@@ -118,7 +118,10 @@ textarea { font: inherit; }
   }
   .sub-panel:hover { border-color: var(--border-strong); }
   .data-chip {
-    @apply inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-3 py-1 text-xs font-medium text-slate-600;
+    @apply inline-flex items-center rounded-full bg-[color:var(--surface-muted)] px-3 py-1 text-xs font-medium text-slate-600;
+  }
+  .mag-input {
+    @apply h-11 w-full rounded-lg border border-[color:var(--border)] bg-white px-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[color:var(--brand)] focus:ring-2 focus:ring-[color:var(--brand-soft)];
   }
   .data-chip-dark {
     @apply inline-flex items-center rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-white;

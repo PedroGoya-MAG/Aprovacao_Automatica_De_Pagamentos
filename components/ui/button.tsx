@@ -14,11 +14,11 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "border-[color:var(--brand)] bg-[color:var(--brand)] text-white hover:border-[color:var(--brand-strong)] hover:bg-[color:var(--brand-strong)] focus-visible:ring-[color:var(--brand)]",
   secondary:
-    "border-[color:var(--border)] bg-white text-[color:var(--brand-deep)] hover:border-[color:var(--brand)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
+    "border-[color:var(--border-strong)] bg-white text-[color:var(--brand-deep)] hover:border-[color:var(--brand)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
   outline:
     "border-[color:var(--brand)] bg-transparent text-[color:var(--brand-strong)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
   ghost:
-    "border-transparent bg-transparent text-[color:var(--brand-strong)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
+    "border-transparent bg-transparent text-[color:var(--brand-strong)] hover:border-[color:var(--brand-soft)] hover:bg-[color:var(--brand-soft)] focus-visible:ring-[color:var(--brand)]",
   danger:
     "border-[color:var(--danger)] bg-[color:var(--danger)] text-white hover:border-red-700 hover:bg-red-700 focus-visible:ring-[color:var(--danger)]",
   destructive:
@@ -41,6 +41,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         type={type}
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] border px-4 font-medium shadow-none transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-55",
+          "cursor-pointer shadow-sm active:translate-y-px disabled:shadow-none",
           variantStyles[variant],
           sizeStyles[size],
           className

@@ -24,36 +24,32 @@ type GroupedPayments = {
 };
 
 export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProps) {
-  const [importedFrom, setImportedFrom] = useState("");
-  const [importedTo, setImportedTo] = useState("");
-  const [search, setSearch] = useState("");
-  const [amountMin, setAmountMin] = useState("");
-
-  const hasActiveFilters =
-    importedFrom.trim().length > 0 ||
-    importedTo.trim().length > 0 ||
-    search.trim().length > 0 ||
-    amountMin.trim().length > 0;
-
   const latestImportedDate = useMemo(() => {
     return initialPayments.reduce((latest, payment) => {
       const current = payment.importedAt?.slice(0, 10) ?? "";
       return current > latest ? current : latest;
     }, initialPayments[0]?.importedAt?.slice(0, 10) ?? "");
   }, [initialPayments]);
+  const defaultImportedFrom = latestImportedDate ? shiftDate(latestImportedDate, -14) : "";
+  const defaultImportedTo = latestImportedDate;
+  const [importedFrom, setImportedFrom] = useState(defaultImportedFrom);
+  const [importedTo, setImportedTo] = useState(defaultImportedTo);
+  const [search, setSearch] = useState("");
+  const [amountMin, setAmountMin] = useState("");
+
+  const hasActiveFilters =
+    importedFrom !== defaultImportedFrom ||
+    importedTo !== defaultImportedTo ||
+    search.trim().length > 0 ||
+    amountMin.trim().length > 0;
 
   const visiblePayments = useMemo(() => {
     const normalizedSearch = normalizeText(search);
     const parsedAmountMin = Number(amountMin.replace(",", "."));
     const hasAmountMin = amountMin.trim().length > 0 && Number.isFinite(parsedAmountMin);
-    const defaultWindowStart = latestImportedDate ? shiftDate(latestImportedDate, -14) : "";
 
     return initialPayments.filter((payment) => {
       const importedDate = payment.importedAt?.slice(0, 10) ?? "";
-      const matchesDefaultWindow =
-        !hasActiveFilters && latestImportedDate
-          ? importedDate >= defaultWindowStart && importedDate <= latestImportedDate
-          : true;
       const matchesImportedFrom = importedFrom ? importedDate >= importedFrom : true;
       const matchesImportedTo = importedTo ? importedDate <= importedTo : true;
       const matchesSearch =
@@ -62,9 +58,9 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         normalizeText(payment.customerDocument).includes(normalizedSearch);
       const matchesAmount = hasAmountMin ? payment.amount >= parsedAmountMin : true;
 
-      return matchesDefaultWindow && matchesImportedFrom && matchesImportedTo && matchesSearch && matchesAmount;
+      return matchesImportedFrom && matchesImportedTo && matchesSearch && matchesAmount;
     });
-  }, [amountMin, hasActiveFilters, importedFrom, importedTo, initialPayments, latestImportedDate, search]);
+  }, [amountMin, importedFrom, importedTo, initialPayments, search]);
 
   const groupedPayments = useMemo<GroupedPayments[]>(() => {
     const map = new Map<string, GroupedPayments>();
@@ -147,8 +143,8 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
               size="sm"
               disabled={!hasActiveFilters}
               onClick={() => {
-                setImportedFrom("");
-                setImportedTo("");
+                setImportedFrom(defaultImportedFrom);
+                setImportedTo(defaultImportedTo);
                 setSearch("");
                 setAmountMin("");
               }}
@@ -159,7 +155,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-          {!hasActiveFilters ? <span className="data-chip">Ultimos 15 dias carregados automaticamente</span> : null}
+          {!hasActiveFilters ? <span className="data-chip">Periodo padrao: ultimos 15 dias carregados</span> : null}
           <span className="data-chip">{visiblePayments.length} pagamento(s)</span>
           <span className="data-chip">{formatCurrency(totalVisibleAmount)}</span>
         </div>
@@ -231,8 +227,8 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
 
 function FilterField({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="space-y-2 text-sm text-slate-700">
-      <span className="font-semibold">{label}</span>
+    <label className="flex flex-col gap-2 text-sm text-slate-700">
+      <span className="min-h-5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</span>
       {children}
     </label>
   );

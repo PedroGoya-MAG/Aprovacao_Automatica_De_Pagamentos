@@ -72,7 +72,7 @@ export function FiltersBar({
           {readOnly ? (
             <span className="data-chip">Perfil somente leitura</span>
           ) : (
-            <Button type="button" variant="primary" size="sm" className="min-w-[164px] rounded-lg shadow-none" disabled={!canApproveAll || processingAllVisible} onClick={onApproveAll}>
+            <Button type="button" variant="primary" size="sm" className="min-w-[164px] rounded-lg border-[color:var(--brand-strong)] shadow-sm" disabled={!canApproveAll || processingAllVisible} onClick={onApproveAll}>
               <CircleCheckBig className="h-4 w-4" />
               {processingAllVisible ? "Aprovando lotes..." : "Aprovar tudo"}
             </Button>

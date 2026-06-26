@@ -290,14 +290,14 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
           <button
             type="button"
             onClick={() => setShowOnlySuspicious((current) => !current)}
-            className={showOnlySuspicious ? "data-chip border-amber-200 bg-amber-50 text-amber-800" : "data-chip"}
+            className={showOnlySuspicious ? "data-chip cursor-pointer bg-amber-50 text-amber-800" : "data-chip cursor-pointer"}
           >
             Somente suspeitos
           </button>
           <button
             type="button"
             onClick={() => setShowOnlyRejected((current) => !current)}
-            className={showOnlyRejected ? "data-chip border-rose-200 bg-rose-50 text-rose-700" : "data-chip"}
+            className={showOnlyRejected ? "data-chip cursor-pointer bg-rose-50 text-rose-700" : "data-chip cursor-pointer"}
           >
             Rejeitados
           </button>

@@ -51,7 +51,6 @@ const activeDescriptions: Record<
 
 export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHeaderTab }) {
   const portalTitle = process.env.NEXT_PUBLIC_PORTAL_TITLE ?? "Portal de Aprovacao de Pagamentos";
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
   const activeContent = activeDescriptions[activeTab];
   const session = await getServerSession();
   const visibleNavItems = session ? navItems.filter((item) => canAccessTab(session.user.role, item.value)) : navItems;
@@ -77,9 +76,6 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="data-chip">Uso corporativo</span>
-            <span className="data-chip">Fluxo operacional</span>
-            {isDemoMode ? <span className="data-chip">Modo demonstracao</span> : null}
             {session ? <span className="data-chip">{formatRoleLabel(session.user.role)}</span> : null}
             {session ? <span className="data-chip">{session.user.name}</span> : null}
             {session ? (
