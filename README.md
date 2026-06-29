@@ -1,5 +1,6 @@
 # Portal de Aprovacao de Pagamentos
 
+
 Aplicacao web corporativa para aprovacao, acompanhamento e consulta de pagamentos de beneficios da MAG Capitalizacao. O projeto usa Next.js App Router, TypeScript e Tailwind CSS, com telas protegidas por OAuth/OIDC quando a autenticacao esta configurada, modo demonstracao com dados locais e integracao server-side com um roteador n8n.
 
 ## O que o projeto entrega
