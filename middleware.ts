@@ -13,8 +13,6 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/tesouraria") ||
     pathname.startsWith("/api/aprovacoes") ||
     pathname.startsWith("/api/bff") ||
-    pathname.startsWith("/api/historico") ||
-    pathname.startsWith("/api/visao-mensal") ||
     pathname.startsWith("/api/tesouraria")
   );
 }
@@ -74,8 +72,6 @@ export const config = {
     "/tesouraria/:path*",
     "/api/aprovacoes/:path*",
     "/api/bff/:path*",
-    "/api/historico/:path*",
-    "/api/visao-mensal/:path*",
     "/api/tesouraria/:path*"
   ]
 };
