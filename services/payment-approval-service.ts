@@ -11,9 +11,13 @@ export async function approvePaymentById(pagamentoId: string | number): Promise<
     return getDemoApprovePaymentResult(pagamentoId);
   }
 
-  const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}/aprovar`, {
-    method: "POST",
-    cache: "no-store"
+  const response = await fetch(`/api/bff/payments/${pagamentoId}`, {
+    method: "PATCH",
+    cache: "no-store",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ action: "approve" })
   });
 
   if (!response.ok) {

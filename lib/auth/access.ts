@@ -69,7 +69,7 @@ function getFeatureForPath(pathname: string): DashboardFeature | null {
     return DASHBOARD_FEATURES.MONTHLY_VIEW;
   }
 
-  if (pathname === "/" || pathname.startsWith("/api/aprovacoes")) {
+  if (pathname === "/" || pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) {
     return DASHBOARD_FEATURES.APPROVALS_VIEW;
   }
 

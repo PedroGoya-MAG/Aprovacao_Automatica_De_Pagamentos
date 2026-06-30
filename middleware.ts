@@ -12,6 +12,7 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/visao-mensal") ||
     pathname.startsWith("/tesouraria") ||
     pathname.startsWith("/api/aprovacoes") ||
+    pathname.startsWith("/api/bff") ||
     pathname.startsWith("/api/historico") ||
     pathname.startsWith("/api/visao-mensal") ||
     pathname.startsWith("/api/tesouraria")
@@ -46,7 +47,7 @@ export function middleware(request: NextRequest) {
     }
 
     if (
-      pathname.startsWith("/api/aprovacoes") &&
+      (pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) &&
       request.method !== "GET" &&
       !canAccessFeature(session.user.role, DASHBOARD_FEATURES.APPROVALS_MANAGE)
     ) {
@@ -72,6 +73,7 @@ export const config = {
     "/visao-mensal/:path*",
     "/tesouraria/:path*",
     "/api/aprovacoes/:path*",
+    "/api/bff/:path*",
     "/api/historico/:path*",
     "/api/visao-mensal/:path*",
     "/api/tesouraria/:path*"
