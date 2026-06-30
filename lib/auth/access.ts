@@ -61,15 +61,15 @@ function getFeatureForPath(pathname: string): DashboardFeature | null {
     return DASHBOARD_FEATURES.TREASURY_VIEW;
   }
 
-  if (pathname.startsWith("/historico") || pathname.startsWith("/api/historico")) {
+  if (pathname.startsWith("/historico") || pathname.startsWith("/api/bff/history")) {
     return DASHBOARD_FEATURES.HISTORY_VIEW;
   }
 
-  if (pathname.startsWith("/visao-mensal") || pathname.startsWith("/api/visao-mensal")) {
+  if (pathname.startsWith("/visao-mensal") || pathname.startsWith("/api/bff/monthly")) {
     return DASHBOARD_FEATURES.MONTHLY_VIEW;
   }
 
-  if (pathname === "/" || pathname.startsWith("/api/aprovacoes")) {
+  if (pathname === "/" || pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) {
     return DASHBOARD_FEATURES.APPROVALS_VIEW;
   }
 
