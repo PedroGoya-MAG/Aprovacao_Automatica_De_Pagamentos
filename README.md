@@ -48,7 +48,7 @@ Quando `AUTH_ENABLED` esta desativado ou as variaveis minimas do Identidade nao 
 
 ## Integracao com backend
 
-As chamadas de aprovacao feitas pelo browser passam por rotas internas em `/api/bff/...`. A camada BFF fica em `lib/bff/`, valida a sessao, recupera o access token apenas no servidor a partir de cookie `HttpOnly` e chama o backend real usando `BACKEND_API_BASE_URL`.
+As chamadas feitas pelo browser passam por rotas internas em `/api/bff/...`. A camada BFF fica em `lib/bff/`, valida a sessao, recupera o access token apenas no servidor a partir de cookie `HttpOnly` e chama os backends reais usando variaveis server-side.
 
 O browser nao deve chamar o backend real diretamente e nenhuma URL sensivel deve usar prefixo `NEXT_PUBLIC_`. O contrato atual do backend recebe `screen` e `action`:
 
@@ -59,13 +59,6 @@ GET {BACKEND_API_BASE_URL}?screen=approvals&action=batches&status=PENDING
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=summary
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=batch-payments&loteId=LOT-001
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=payment-detail&pagamentoId=123
-GET {N8N_API_URL}?screen=history&action=batches&onlySuspicious=false
-GET {N8N_API_URL}?screen=history&action=summary&onlySuspicious=false
-GET {N8N_API_URL}?screen=history&action=batch-payments&loteId=LOT-001
-GET {N8N_API_URL}?screen=monthly&action=months
-GET {N8N_API_URL}?screen=monthly&action=summary&month=2026-06
-GET {N8N_API_URL}?screen=monthly&action=series&month=2026-06
-GET {N8N_API_URL}?screen=treasury&action=summary
 ```
 
 ### POST
@@ -111,7 +104,7 @@ lib/
   bff/                 Auth context, HTTP client e contratos server-side do BFF.
   demo-data.ts         Dados demo de aprovacoes.
   history-monthly-demo-data.ts
-  n8n-api.ts           Cliente server-side legado para telas fora de aprovacoes.
+  n8n-api.ts           Cliente server-side para integracoes internas fora do browser.
   runtime-mode.ts      Leitura do modo demonstracao.
 services/
   *-service.ts         Camada client-side de acesso a APIs internas `/api/bff/...`.
@@ -166,9 +159,7 @@ Acesse [http://localhost:3000](http://localhost:3000).
 - `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.
 - `NEXT_PUBLIC_APP_ENV`: identificador livre de ambiente.
 - `NEXT_PUBLIC_DEMO_MODE`: quando `true`, usa dados locais de demonstracao.
-- `BACKEND_API_BASE_URL`: endpoint server-side do backend real usado pelo BFF de aprovacoes.
-- `N8N_API_URL`: endpoint server-side legado para telas fora de aprovacoes.
-- `API_AUTH_TOKEN`: token opcional legado enviado como `Authorization: Bearer ...` nas chamadas fora do BFF.
+- `BACKEND_API_BASE_URL`: endpoint server-side do backend real usado pelo BFF. Nao use prefixo `NEXT_PUBLIC_` para essa URL.
 - `API_REQUEST_TIMEOUT_MS`: timeout obrigatorio das chamadas externas, em milissegundos.
 
 Fora do modo demonstracao, `BACKEND_API_BASE_URL` precisa estar configurada para aprovacoes. A aplicacao nao troca silenciosamente para mock quando o backend real esta ausente.
@@ -208,8 +199,6 @@ NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=homologacao
 NEXT_PUBLIC_DEMO_MODE=false
 BACKEND_API_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
-N8N_API_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
-API_AUTH_TOKEN=
 API_REQUEST_TIMEOUT_MS=30000
 AUTH_ENABLED=true
 AUTH_APP_BASE_URL=https://pagamentos.empresa.com.br

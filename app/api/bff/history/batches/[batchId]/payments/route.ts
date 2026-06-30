@@ -1,51 +1,59 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest } from "next/server";
 
-import { N8nApiError, n8nGet } from "@/lib/n8n-api";
+import { getAuthenticatedBffContext } from "@/lib/bff/auth-context";
+import { jsonError, jsonOk, toBffErrorResponse } from "@/lib/bff/errors";
 import { normalizeDateValue } from "@/lib/formatters";
+import { N8nApiError, n8nGet } from "@/lib/n8n-api";
 import { type HistoricalPayment, type HistoryPaymentProcessingType, type SuspicionReasonCode } from "@/types/insights";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ loteId: string }> }
+  request: NextRequest,
+  { params }: { params: Promise<{ batchId: string }> }
 ) {
-  const { loteId } = await params;
+  let correlationId: string | undefined;
 
   try {
-    const rawData = await n8nGet<unknown>("history", "batch-payments", { loteId });
-    return NextResponse.json(normalizeHistoricalPayments(rawData, loteId));
+    const context = await getAuthenticatedBffContext(request);
+    correlationId = context.correlationId;
+    const { batchId } = await params;
+    const rawData = await n8nGet<unknown>("history", "batch-payments", { loteId: batchId });
+
+    return jsonOk(normalizeHistoricalPayments(rawData, batchId));
   } catch (error) {
     if (error instanceof N8nApiError) {
-      return NextResponse.json([], { status: error.status });
+      return jsonError(error.status, "BACKEND_ERROR", "Nao foi possivel carregar os pagamentos do lote historico.", correlationId);
     }
 
-    return NextResponse.json([], { status: 502 });
+    return toBffErrorResponse(error, "Nao foi possivel carregar os pagamentos do lote historico.", correlationId);
   }
 }
 
-function normalizeHistoricalPayments(rawData: unknown, loteId: string): HistoricalPayment[] {
+function normalizeHistoricalPayments(rawData: unknown, batchId: string): HistoricalPayment[] {
   if (!Array.isArray(rawData)) {
     return [];
   }
 
   return rawData
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-    .map((item, index) => normalizeHistoricalPayment(item, loteId, index));
+    .map((item, index) => normalizeHistoricalPayment(item, batchId, index));
 }
 
 function normalizeHistoricalPayment(
   item: Record<string, unknown>,
-  loteId: string,
+  batchId: string,
   index: number
 ): HistoricalPayment {
-  const normalizedId = pickText(item.id, `${loteId}-${index + 1}`);
+  const normalizedId = pickText(item.id, `${batchId}-${index + 1}`);
   const suspicionReasons = Array.isArray(item.suspicionReasons)
     ? item.suspicionReasons.filter(isSuspicionReasonCode)
     : [];
 
   return {
     id: normalizedId,
-    loteId: pickText(item.loteId, loteId),
-    batchNumber: pickText(item.batchNumber, loteId),
+    loteId: pickText(item.loteId, batchId),
+    batchNumber: pickText(item.batchNumber, batchId),
     beneficiaryName: pickText(item.beneficiaryName, "Beneficiario nao informado"),
     document: pickText(item.document, "-"),
     grossAmount: Number(item.grossAmount ?? 0),

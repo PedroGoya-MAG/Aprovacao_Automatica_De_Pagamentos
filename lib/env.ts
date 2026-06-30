@@ -12,26 +12,8 @@ function getRequiredEnvValue(key: string) {
   return value;
 }
 
-export function getN8nApiUrl() {
-  const value = readEnvValue("N8N_API_URL");
-
-  if (!value) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[env] API base URL ausente. Configure N8N_API_URL no servidor.");
-    }
-
-    throw new Error("Variavel de ambiente obrigatoria nao configurada: N8N_API_URL.");
-  }
-
-  return value;
-}
-
 export function getBackendApiBaseUrl() {
   return getRequiredEnvValue("BACKEND_API_BASE_URL");
-}
-
-export function getApiAuthToken() {
-  return readEnvValue("API_AUTH_TOKEN");
 }
 
 export function getApiRequestTimeoutMs() {
