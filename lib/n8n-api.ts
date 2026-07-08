@@ -1,4 +1,4 @@
-import { getBackendApiBaseUrl } from "@/lib/env";
+import { getApiAuthToken, getN8nApiUrl } from "@/lib/env";
 import { createRequestTimeoutSignal } from "@/lib/http";
 
 type N8nParamValue = string | number | boolean | null | undefined;
@@ -17,7 +17,7 @@ export class N8nApiError extends Error {
 }
 
 export function buildN8nGetUrl(screen: string, action: string, params: N8nParams = {}) {
-  const url = new URL(getBackendApiBaseUrl());
+  const url = new URL(getN8nApiUrl());
 
   url.searchParams.set("screen", screen);
   url.searchParams.set("action", action);
@@ -55,7 +55,7 @@ export async function n8nGet<T>(screen: string, action: string, params: N8nParam
 }
 
 export async function n8nPost<T>(screen: string, action: string, body: Record<string, unknown> = {}) {
-  const url = getBackendApiBaseUrl();
+  const url = getN8nApiUrl();
   const startedAt = Date.now();
 
   logN8nStart("POST", screen, action, url);
@@ -85,10 +85,17 @@ export async function n8nPost<T>(screen: string, action: string, body: Record<st
 }
 
 function buildN8nHeaders(extraHeaders: HeadersInit = {}) {
-  return new Headers({
+  const token = getApiAuthToken();
+  const headers = new Headers({
     Accept: "application/json",
     ...extraHeaders
   });
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  return headers;
 }
 
 function logN8nStart(method: string, screen: string, action: string, url: string) {
@@ -98,7 +105,8 @@ function logN8nStart(method: string, screen: string, action: string, url: string
     action,
     apiBaseUrl: sanitizeUrl(url),
     demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
-    usingMock: false
+    usingMock: false,
+    authTokenConfigured: Boolean(getApiAuthToken())
   });
 }
 

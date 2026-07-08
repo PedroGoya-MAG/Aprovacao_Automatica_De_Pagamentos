@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { N8nApiError } from "@/lib/n8n-api";
 import { getLotes } from "@/services/payment-service";
 import { type BenefitType, type PaymentStatus } from "@/types/payments";
 
@@ -15,8 +16,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json({ message: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
-      { message: error instanceof Error ? error.message : "Nao foi possivel carregar os lotes de pagamentos." },
+      { message: "Nao foi possivel carregar os lotes de pagamentos." },
       { status: 502 }
     );
   }

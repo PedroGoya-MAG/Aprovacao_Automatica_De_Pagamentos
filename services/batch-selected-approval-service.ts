@@ -15,13 +15,13 @@ export async function approveSelectedPayments(
     return getDemoApproveSelectedResult(loteId, paymentIds);
   }
 
-  const response = await fetch("/api/bff/payments/approve-selected", {
+  const response = await fetch(`/api/aprovacoes/lotes/${loteId}/aprovar-selecionados`, {
     method: "POST",
     cache: "no-store",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ batchId: loteId, paymentIds })
+    body: JSON.stringify({ paymentIds })
   });
 
   if (!response.ok) {

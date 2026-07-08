@@ -1,6 +1,7 @@
 import { extractAuthorizedScopes } from "@/lib/auth/access";
 import { decodeJwtPayload, extractScopeValues, isJwtExpired } from "@/lib/auth/jwt";
 import { getDashBeneficioRoleFromPayload } from "@/lib/auth/roles";
+import { parseDate } from "@/lib/formatters";
 import { type AuthenticatedSession } from "@/types/auth";
 
 export const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_hmg_access_token";
@@ -50,6 +51,6 @@ export function resolveSessionFromAccessToken(accessToken: string): Authenticate
 
 function toExpirationDate(value: unknown) {
   if (typeof value !== "number") return null;
-  const date = new Date(value * 1000);
-  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  const date = parseDate(value * 1000, "token.exp");
+  return date ? date.toISOString() : null;
 }

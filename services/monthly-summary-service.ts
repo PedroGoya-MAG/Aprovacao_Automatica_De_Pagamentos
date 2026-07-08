@@ -8,7 +8,7 @@ export async function getMonthlySummary(month: string, benefitType: "ALL" | Bene
     searchParams.set("benefitType", benefitType);
   }
 
-  const response = await fetch(`/api/bff/monthly/summary?${searchParams.toString()}`, {
+  const response = await fetch(`/api/visao-mensal/resumo?${searchParams.toString()}`, {
     method: "GET",
     cache: "no-store"
   });

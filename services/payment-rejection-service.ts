@@ -14,13 +14,13 @@ export async function rejectPaymentById(
     return getDemoRejectPaymentResult(pagamentoId);
   }
 
-  const response = await fetch("/api/bff/payments/reject", {
+  const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}/rejeitar`, {
     method: "POST",
     cache: "no-store",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ paymentId: String(pagamentoId), ...(motivo ? { motivo } : {}) })
+    body: JSON.stringify(motivo ? { motivo } : {})
 
   });
 

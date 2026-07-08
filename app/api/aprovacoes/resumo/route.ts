@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getResumoDashboardServer } from "@/services/dashboard-server-service";
+import { N8nApiError } from "@/lib/n8n-api";
+import { getResumoDashboardServer } from "@/services/dashboard-service";
 import { type BenefitType, type PaymentStatus } from "@/types/payments";
 
 export async function GET(request: NextRequest) {
@@ -13,8 +14,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
+    if (error instanceof N8nApiError) {
+      return NextResponse.json({ message: error.message }, { status: error.status });
+    }
+
     return NextResponse.json(
-      { message: error instanceof Error ? error.message : "Falha ao consultar o resumo da dashboard." },
+      { message: "Falha ao consultar o resumo da dashboard." },
       { status: 502 }
     );
   }

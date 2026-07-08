@@ -15,7 +15,7 @@ export async function getPagamentosByLote(loteId: string): Promise<Payment[]> {
     usingMock: false
   });
 
-  const response = await fetch(`/api/bff/batches/${loteId}/payments`, {
+  const response = await fetch(`/api/aprovacoes/lotes/${loteId}/pagamentos`, {
     method: "GET",
     cache: "no-store"
   });
@@ -32,9 +32,8 @@ export async function getPagamentosByLote(loteId: string): Promise<Payment[]> {
 
 async function readErrorMessage(response: Response) {
   try {
-    const payload = (await response.json()) as { error?: { message?: unknown }; message?: unknown };
-    const message = payload.error?.message ?? payload.message;
-    return typeof message === "string" && message.trim() ? message.trim() : null;
+    const payload = (await response.json()) as { message?: unknown };
+    return typeof payload.message === "string" && payload.message.trim() ? payload.message.trim() : null;
   } catch {
     return null;
   }
