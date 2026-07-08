@@ -7,7 +7,11 @@ export async function getPagamentoById(pagamentoId: string | number): Promise<Pa
     return getDemoPagamentoById(pagamentoId);
   }
 
+<<<<<<< HEAD
   const response = await fetch(`/api/bff/payments/${pagamentoId}`, {
+=======
+  const response = await fetch(`/api/aprovacoes/pagamentos/${pagamentoId}`, {
+>>>>>>> prd/staging
     method: "GET",
     cache: "no-store"
   });

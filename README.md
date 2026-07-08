@@ -1,6 +1,10 @@
 # Portal de Aprovacao de Pagamentos
 
+<<<<<<< HEAD
 Aplicacao web corporativa para aprovacao, acompanhamento e consulta de pagamentos de beneficios da MAG Capitalizacao. O projeto usa Next.js App Router, TypeScript e Tailwind CSS, com telas protegidas por OAuth/OIDC quando a autenticacao esta configurada, modo demonstracao com dados locais e integracao server-side via BFF.
+=======
+Aplicacao web corporativa para aprovacao, acompanhamento e consulta de pagamentos de beneficios da MAG Capitalizacao. O projeto usa Next.js App Router, TypeScript e Tailwind CSS, com telas protegidas por OAuth/OIDC quando a autenticacao esta configurada, modo demonstracao com dados locais e integracao server-side com um roteador n8n.
+>>>>>>> prd/staging
 
 ## O que o projeto entrega
 
@@ -48,17 +52,37 @@ Quando `AUTH_ENABLED` esta desativado ou as variaveis minimas do Identidade nao 
 
 ## Integracao com backend
 
+<<<<<<< HEAD
 As chamadas feitas pelo browser passam por rotas internas em `/api/bff/...`. A camada BFF fica em `lib/bff/`, valida a sessao, recupera o access token apenas no servidor a partir de cookie `HttpOnly` e chama os backends reais usando variaveis server-side.
 
 O browser nao deve chamar o backend real diretamente e nenhuma URL sensivel deve usar prefixo `NEXT_PUBLIC_`. O contrato atual do backend recebe `screen` e `action`:
+=======
+As chamadas externas ficam concentradas em `lib/n8n-api.ts` e sao feitas server-side para `N8N_API_URL` ou, por compatibilidade, `NEXT_PUBLIC_N8N_API_URL`.
+
+O roteador n8n recebe sempre `screen` e `action`:
+>>>>>>> prd/staging
 
 ### GET
 
 ```http
+<<<<<<< HEAD
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=batches&status=PENDING
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=summary
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=batch-payments&loteId=LOT-001
 GET {BACKEND_API_BASE_URL}?screen=approvals&action=payment-detail&pagamentoId=123
+=======
+GET {N8N_API_URL}?screen=approvals&action=batches&status=PENDING
+GET {N8N_API_URL}?screen=approvals&action=summary
+GET {N8N_API_URL}?screen=approvals&action=batch-payments&loteId=LOT-001
+GET {N8N_API_URL}?screen=approvals&action=payment-detail&pagamentoId=123
+GET {N8N_API_URL}?screen=history&action=batches&onlySuspicious=false
+GET {N8N_API_URL}?screen=history&action=summary&onlySuspicious=false
+GET {N8N_API_URL}?screen=history&action=batch-payments&loteId=LOT-001
+GET {N8N_API_URL}?screen=monthly&action=months
+GET {N8N_API_URL}?screen=monthly&action=summary&month=2026-06
+GET {N8N_API_URL}?screen=monthly&action=series&month=2026-06
+GET {N8N_API_URL}?screen=treasury&action=summary
+>>>>>>> prd/staging
 ```
 
 ### POST
@@ -101,6 +125,7 @@ components/
   ui/                  Componentes base.
 lib/
   auth/                Configuracao, sessao, roles, JWT e OAuth/OIDC.
+<<<<<<< HEAD
   bff/                 Auth context, HTTP client e contratos server-side do BFF.
   demo-data.ts         Dados demo de aprovacoes.
   history-monthly-demo-data.ts
@@ -108,6 +133,14 @@ lib/
   runtime-mode.ts      Leitura do modo demonstracao.
 services/
   *-service.ts         Camada client-side de acesso a APIs internas `/api/bff/...`.
+=======
+  demo-data.ts         Dados demo de aprovacoes.
+  history-monthly-demo-data.ts
+  n8n-api.ts           Cliente server-side do roteador n8n.
+  runtime-mode.ts      Leitura do modo demonstracao.
+services/
+  *-service.ts         Camada de acesso a APIs internas e ao n8n.
+>>>>>>> prd/staging
 types/
   auth.ts
   insights.ts
@@ -159,10 +192,19 @@ Acesse [http://localhost:3000](http://localhost:3000).
 - `NEXT_PUBLIC_PORTAL_TITLE`: titulo exibido no cabecalho.
 - `NEXT_PUBLIC_APP_ENV`: identificador livre de ambiente.
 - `NEXT_PUBLIC_DEMO_MODE`: quando `true`, usa dados locais de demonstracao.
+<<<<<<< HEAD
 - `BACKEND_API_BASE_URL`: endpoint server-side do backend real usado pelo BFF. Nao use prefixo `NEXT_PUBLIC_` para essa URL.
 - `API_REQUEST_TIMEOUT_MS`: timeout obrigatorio das chamadas externas, em milissegundos.
 
 Fora do modo demonstracao, `BACKEND_API_BASE_URL` precisa estar configurada para aprovacoes. A aplicacao nao troca silenciosamente para mock quando o backend real esta ausente.
+=======
+- `N8N_API_URL`: endpoint server-side do roteador central do n8n.
+- `NEXT_PUBLIC_N8N_API_URL`: fallback legado para URL do n8n.
+- `API_AUTH_TOKEN`: token opcional enviado como `Authorization: Bearer ...` nas chamadas ao n8n.
+- `API_REQUEST_TIMEOUT_MS`: timeout obrigatorio das chamadas externas, em milissegundos.
+
+Fora do modo demonstracao, `N8N_API_URL` ou `NEXT_PUBLIC_N8N_API_URL` precisa estar configurada. A aplicacao nao troca silenciosamente para mock quando o backend real esta ausente.
+>>>>>>> prd/staging
 
 ### Autenticacao
 
@@ -198,7 +240,12 @@ Exemplo integrado:
 NEXT_PUBLIC_PORTAL_TITLE=Portal de Aprovacao de Pagamentos
 NEXT_PUBLIC_APP_ENV=homologacao
 NEXT_PUBLIC_DEMO_MODE=false
+<<<<<<< HEAD
 BACKEND_API_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
+=======
+N8N_API_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
+API_AUTH_TOKEN=
+>>>>>>> prd/staging
 API_REQUEST_TIMEOUT_MS=30000
 AUTH_ENABLED=true
 AUTH_APP_BASE_URL=https://pagamentos.empresa.com.br

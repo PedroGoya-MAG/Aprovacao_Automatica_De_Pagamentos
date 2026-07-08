@@ -1,7 +1,11 @@
 import { AppHeader } from "@/components/layout/app-header";
 import { DashboardShell } from "@/components/payments/dashboard-shell";
 import { getServerSession } from "@/lib/auth/session";
+<<<<<<< HEAD
 import { getResumoDashboardServer } from "@/services/dashboard-server-service";
+=======
+import { getResumoDashboardServer } from "@/services/dashboard-service";
+>>>>>>> prd/staging
 import { getLotes } from "@/services/payment-service";
 
 export const dynamic = "force-dynamic";

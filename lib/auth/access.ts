@@ -61,6 +61,7 @@ function getFeatureForPath(pathname: string): DashboardFeature | null {
     return DASHBOARD_FEATURES.TREASURY_VIEW;
   }
 
+<<<<<<< HEAD
   if (pathname.startsWith("/historico") || pathname.startsWith("/api/bff/history")) {
     return DASHBOARD_FEATURES.HISTORY_VIEW;
   }
@@ -70,6 +71,17 @@ function getFeatureForPath(pathname: string): DashboardFeature | null {
   }
 
   if (pathname === "/" || pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) {
+=======
+  if (pathname.startsWith("/historico") || pathname.startsWith("/api/historico")) {
+    return DASHBOARD_FEATURES.HISTORY_VIEW;
+  }
+
+  if (pathname.startsWith("/visao-mensal") || pathname.startsWith("/api/visao-mensal")) {
+    return DASHBOARD_FEATURES.MONTHLY_VIEW;
+  }
+
+  if (pathname === "/" || pathname.startsWith("/api/aprovacoes")) {
+>>>>>>> prd/staging
     return DASHBOARD_FEATURES.APPROVALS_VIEW;
   }
 

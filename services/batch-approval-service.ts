@@ -12,6 +12,7 @@ export async function approveBatch(loteId: string): Promise<ApproveBatchResult> 
     return getDemoApproveBatchResult(loteId);
   }
 
+<<<<<<< HEAD
   const response = await fetch("/api/bff/payments/approve-batch", {
     method: "POST",
     cache: "no-store",
@@ -19,6 +20,11 @@ export async function approveBatch(loteId: string): Promise<ApproveBatchResult> 
       "Content-Type": "application/json"
     },
     body: JSON.stringify({ batchId: loteId })
+=======
+  const response = await fetch(`/api/aprovacoes/lotes/${loteId}/aprovar`, {
+    method: "POST",
+    cache: "no-store"
+>>>>>>> prd/staging
   });
 
   if (!response.ok) {

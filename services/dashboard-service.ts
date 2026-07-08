@@ -1,4 +1,8 @@
 import { getDemoResumoDashboard } from "@/lib/demo-data";
+<<<<<<< HEAD
+=======
+import { n8nGet } from "@/lib/n8n-api";
+>>>>>>> prd/staging
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
@@ -21,7 +25,11 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
   });
 
   const query = buildSummaryQuery(filters);
+<<<<<<< HEAD
   const response = await fetch(`/api/bff/dashboard${query}`, {
+=======
+  const response = await fetch(`/api/aprovacoes/resumo${query}`, {
+>>>>>>> prd/staging
     method: "GET",
     cache: "no-store"
   });
@@ -35,6 +43,26 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
   return summary;
 }
 
+<<<<<<< HEAD
+=======
+export async function getResumoDashboardServer(filters: DashboardSummaryFilters = {}) {
+  if (isDemoMode()) {
+    const summary = getDemoResumoDashboard(filters);
+    logSummaryLoaded("mock", summary);
+    return summary;
+  }
+
+  console.info("[approvals] loading summary", {
+    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    usingMock: false
+  });
+
+  const summary = await n8nGet<ResumoDashboard>("approvals", "summary", buildSummaryParams(filters));
+  logSummaryLoaded("api", summary);
+  return summary;
+}
+
+>>>>>>> prd/staging
 function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   const searchParams = new URLSearchParams();
 
@@ -59,6 +87,33 @@ function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   return searchParams.size > 0 ? `?${searchParams.toString()}` : "";
 }
 
+<<<<<<< HEAD
+=======
+function buildSummaryParams(filters: DashboardSummaryFilters = {}) {
+  const params: Record<string, string> = {};
+
+  if (filters.benefitType && filters.benefitType !== "ALL") {
+    params.benefitType = filters.benefitType === "SORTEIO" ? "Sorteio" : "Resgate";
+  }
+
+  if (filters.status && filters.status !== "ALL") {
+    const statusMap: Record<PaymentStatus, string> = {
+      PENDING: "PENDENTE",
+      APPROVED: "APROVADO",
+      REJECTED: "REJEITADO"
+    };
+
+    params.status = statusMap[filters.status];
+  }
+
+  if (filters.search?.trim()) {
+    params.search = filters.search.trim();
+  }
+
+  return params;
+}
+
+>>>>>>> prd/staging
 function logSummaryLoaded(source: "api" | "mock", summary: ResumoDashboard) {
   console.info("[approvals] summary loaded", {
     source,
