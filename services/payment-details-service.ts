@@ -1,0 +1,30 @@
+import { getDemoPagamentoById } from "@/lib/demo-data";
+import { isDemoMode } from "@/lib/runtime-mode";
+import { type Payment } from "@/types/payments";
+
+export async function getPagamentoById(pagamentoId: string | number): Promise<Payment | null> {
+  if (isDemoMode()) {
+    return getDemoPagamentoById(pagamentoId);
+  }
+
+  const response = await fetch(`/api/bff/payments/${pagamentoId}`, {
+    method: "GET",
+    cache: "no-store"
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Nao foi possivel carregar os detalhes do pagamento.");
+  }
+
+  const data = (await response.json()) as Payment | null;
+
+  if (!data || (typeof data === "object" && Object.keys(data).length === 0)) {
+    return null;
+  }
+
+  return data;
+}
