@@ -12,10 +12,6 @@ function getRequiredEnvValue(key: string) {
   return value;
 }
 
-<<<<<<< HEAD
-export function getBackendApiBaseUrl() {
-  return getRequiredEnvValue("BACKEND_API_BASE_URL");
-=======
 export function getN8nApiUrl() {
   const value = readEnvValue("N8N_API_URL") || readEnvValue("NEXT_PUBLIC_N8N_API_URL");
 
@@ -30,9 +26,12 @@ export function getN8nApiUrl() {
   return value;
 }
 
+export function getBackendApiBaseUrl() {
+  return getRequiredEnvValue("BACKEND_API_BASE_URL");
+}
+
 export function getApiAuthToken() {
   return readEnvValue("API_AUTH_TOKEN");
->>>>>>> prd/staging
 }
 
 export function getApiRequestTimeoutMs() {

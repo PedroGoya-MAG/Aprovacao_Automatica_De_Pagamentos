@@ -1,10 +1,5 @@
 import { getDemoLotes } from "@/lib/demo-data";
-<<<<<<< HEAD
-import { getAuthenticatedBffContext } from "@/lib/bff/auth-context";
-import { getBatches } from "@/lib/bff/payments-api";
-=======
 import { n8nGet } from "@/lib/n8n-api";
->>>>>>> prd/staging
 import { isDemoMode } from "@/lib/runtime-mode";
 import { normalizeDateValue } from "@/lib/formatters";
 import { type BenefitType, type Lote, type PaymentStatus } from "@/types/payments";
@@ -22,10 +17,6 @@ export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
   }
 
   logBatchesLoadStart();
-<<<<<<< HEAD
-  const context = await getAuthenticatedBffContext();
-  const batches = await getBatches(context, filters);
-=======
   const data = await n8nGet<unknown>("approvals", "batches", buildApprovalsBatchesParams(filters));
 
   if (!Array.isArray(data)) {
@@ -37,7 +28,6 @@ export async function getLotes(filters: LotesFilters = {}): Promise<Lote[]> {
     .map((batch) => normalizeBatch(batch))
     .filter((batch): batch is Lote => Boolean(batch));
   const batches = filterOperationalBatches(normalized, filters);
->>>>>>> prd/staging
   logBatchesLoaded("api", batches);
   return batches;
 }
@@ -47,8 +37,6 @@ export const paymentService = {
   listBatches: getLotes
 };
 
-<<<<<<< HEAD
-=======
 function buildApprovalsBatchesParams(filters: LotesFilters) {
   const params: Record<string, string> = {};
 
@@ -133,7 +121,6 @@ function pickText(value: unknown, fallback?: string) {
   return fallback;
 }
 
->>>>>>> prd/staging
 function logBatchesLoadStart() {
   console.info("[approvals] loading batches", {
     demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
@@ -151,8 +138,6 @@ function logBatchesLoaded(source: "api" | "mock", batches: Lote[]) {
   });
 }
 
-<<<<<<< HEAD
-=======
 function filterOperationalBatches(batches: Lote[], filters: LotesFilters) {
   if (filters.status !== "PENDING") {
     return batches;
@@ -170,4 +155,3 @@ function filterOperationalBatches(batches: Lote[], filters: LotesFilters) {
     return batch.status === "PENDING" || batch.status === "PARTIALLY_APPROVED";
   });
 }
->>>>>>> prd/staging

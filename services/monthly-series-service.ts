@@ -8,11 +8,7 @@ export async function getMonthlySeries(month: string, benefitType: "ALL" | Benef
     searchParams.set("benefitType", benefitType);
   }
 
-<<<<<<< HEAD
-  const response = await fetch(`/api/bff/monthly/series?${searchParams.toString()}`, {
-=======
   const response = await fetch(`/api/visao-mensal/series?${searchParams.toString()}`, {
->>>>>>> prd/staging
     method: "GET",
     cache: "no-store"
   });

@@ -1,8 +1,5 @@
 import { getDemoResumoDashboard } from "@/lib/demo-data";
-<<<<<<< HEAD
-=======
 import { n8nGet } from "@/lib/n8n-api";
->>>>>>> prd/staging
 import { isDemoMode } from "@/lib/runtime-mode";
 import { type BenefitType, type PaymentStatus, type ResumoDashboard } from "@/types/payments";
 
@@ -25,11 +22,7 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
   });
 
   const query = buildSummaryQuery(filters);
-<<<<<<< HEAD
-  const response = await fetch(`/api/bff/dashboard${query}`, {
-=======
   const response = await fetch(`/api/aprovacoes/resumo${query}`, {
->>>>>>> prd/staging
     method: "GET",
     cache: "no-store"
   });
@@ -43,8 +36,6 @@ export async function getResumoDashboard(filters: DashboardSummaryFilters = {}) 
   return summary;
 }
 
-<<<<<<< HEAD
-=======
 export async function getResumoDashboardServer(filters: DashboardSummaryFilters = {}) {
   if (isDemoMode()) {
     const summary = getDemoResumoDashboard(filters);
@@ -62,7 +53,6 @@ export async function getResumoDashboardServer(filters: DashboardSummaryFilters 
   return summary;
 }
 
->>>>>>> prd/staging
 function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   const searchParams = new URLSearchParams();
 
@@ -87,8 +77,6 @@ function buildSummaryQuery(filters: DashboardSummaryFilters = {}) {
   return searchParams.size > 0 ? `?${searchParams.toString()}` : "";
 }
 
-<<<<<<< HEAD
-=======
 function buildSummaryParams(filters: DashboardSummaryFilters = {}) {
   const params: Record<string, string> = {};
 
@@ -113,7 +101,6 @@ function buildSummaryParams(filters: DashboardSummaryFilters = {}) {
   return params;
 }
 
->>>>>>> prd/staging
 function logSummaryLoaded(source: "api" | "mock", summary: ResumoDashboard) {
   console.info("[approvals] summary loaded", {
     source,
