@@ -31,7 +31,12 @@ export class OAuthProviderError extends Error {
 }
 
 function encodeBase64Url(bytes: Uint8Array) {
-  return Buffer.from(bytes).toString("base64url");
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function createRandomValue(byteLength = 32) {
