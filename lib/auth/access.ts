@@ -1,12 +1,16 @@
 import { extractClaimStrings } from "@/lib/auth/jwt";
 import {
   canAccessFeature,
+  canAccessPath,
   DASHBOARD_FEATURES,
   DASH_BENEFICIO_ROLES,
+  getDefaultRouteForRole,
   type DashboardFeature,
   type DashBeneficioRole
-} from "@/lib/auth/roles";
+} from "@/lib/auth/authorization";
 import { type AuthTokenPayload, type AuthenticatedSession } from "@/types/auth";
+
+export { canAccessPath, getDefaultRouteForRole };
 
 type AppHeaderTab = "approvals" | "history" | "monthly" | "treasury";
 
@@ -26,22 +30,12 @@ export function canAccessTab(role: DashBeneficioRole, tab: AppHeaderTab) {
   return canAccessFeature(role, TAB_FEATURES[tab]);
 }
 
-export function canAccessPath(role: DashBeneficioRole, pathname: string) {
-  const feature = getFeatureForPath(pathname);
-
-  return feature ? canAccessFeature(role, feature) : true;
-}
-
 export function canManageApprovals(session: AuthenticatedSession | null) {
   return session ? canAccessFeature(session.user.role, DASHBOARD_FEATURES.APPROVALS_MANAGE) : false;
 }
 
 export function isReadOnlyApprovalUser(session: AuthenticatedSession | null) {
   return session?.user.role === DASH_BENEFICIO_ROLES.BENEFICIO;
-}
-
-export function getDefaultRouteForRole(role: DashBeneficioRole) {
-  return role === DASH_BENEFICIO_ROLES.TESOURARIA ? "/tesouraria" : "/";
 }
 
 export function formatRoleLabel(role: DashBeneficioRole) {
@@ -56,22 +50,3 @@ export function formatRoleLabel(role: DashBeneficioRole) {
   return "Beneficio";
 }
 
-function getFeatureForPath(pathname: string): DashboardFeature | null {
-  if (pathname.startsWith("/tesouraria") || pathname.startsWith("/api/tesouraria")) {
-    return DASHBOARD_FEATURES.TREASURY_VIEW;
-  }
-
-  if (pathname.startsWith("/historico") || pathname.startsWith("/api/bff/history")) {
-    return DASHBOARD_FEATURES.HISTORY_VIEW;
-  }
-
-  if (pathname.startsWith("/visao-mensal") || pathname.startsWith("/api/bff/monthly")) {
-    return DASHBOARD_FEATURES.MONTHLY_VIEW;
-  }
-
-  if (pathname === "/" || pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) {
-    return DASHBOARD_FEATURES.APPROVALS_VIEW;
-  }
-
-  return null;
-}
