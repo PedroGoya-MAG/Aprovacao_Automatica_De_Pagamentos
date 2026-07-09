@@ -169,6 +169,7 @@ Fora do modo demonstracao, `BACKEND_API_BASE_URL` precisa estar configurada para
 - `AUTH_ENABLED`: forca ativacao/desativacao da autenticacao quando definido como `true` ou `false`.
 - `AUTH_APP_BASE_URL`: origem canonica da aplicacao, sem caminho e sem barra final.
 - `AUTH_URL` ou `NEXT_PUBLIC_APP_URL`: fallbacks para `AUTH_APP_BASE_URL`.
+- `AUTH_ACCESS_TOKEN_COOKIE`: nome do cookie local do access token; padrao `mag_identidade_access_token`.
 - `AUTH_IDENTIDADE_AUTHORIZE_URL`: endpoint de autorizacao do Identidade.
 - `AUTH_IDENTIDADE_TOKEN_URL`: endpoint de token do Identidade.
 - `AUTH_IDENTIDADE_LOGOUT_URL`: endpoint de logout do Identidade.
@@ -202,6 +203,7 @@ BACKEND_API_BASE_URL=https://capn8nwfhmg.azurewebsites.net/webhook/api/router
 API_REQUEST_TIMEOUT_MS=30000
 AUTH_ENABLED=true
 AUTH_APP_BASE_URL=https://pagamentos.empresa.com.br
+AUTH_ACCESS_TOKEN_COOKIE=mag_identidade_access_token
 AUTH_IDENTIDADE_AUTHORIZE_URL=https://identidade.empresa.com.br/connect/authorize
 AUTH_IDENTIDADE_TOKEN_URL=https://identidade.empresa.com.br/connect/token
 AUTH_IDENTIDADE_LOGOUT_URL=https://identidade.empresa.com.br/connect/endsession
