@@ -53,8 +53,8 @@ export function FiltersBar({
   const hasActiveFilters = filterType !== "ALL" || filterStatus !== "ALL" || search.trim().length > 0;
 
   return (
-    <div className="panel flex flex-col gap-4 px-5 py-5 sm:px-6">
-      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] pb-4 xl:flex-row xl:items-start xl:justify-between">
+    <div className="panel flex flex-col gap-3 px-4 py-4 sm:px-5 2xl:gap-4 2xl:px-6 2xl:py-5">
+      <div className="flex flex-col gap-3 border-b border-[color:var(--border)] pb-3 xl:flex-row xl:items-start xl:justify-between 2xl:gap-4 2xl:pb-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm font-bold text-[color:var(--brand-deep)]">
             <SlidersHorizontal className="h-4 w-4 text-[color:var(--brand)]" />
@@ -91,7 +91,7 @@ export function FiltersBar({
         </div>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(260px,1fr)_minmax(220px,0.75fr)_minmax(220px,0.9fr)_minmax(260px,1.2fr)] xl:items-stretch">
+      <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_minmax(200px,0.75fr)_minmax(200px,0.9fr)_minmax(240px,1.15fr)] xl:items-stretch">
         <label className="block w-full">
           <span className="mag-label mb-2 block">Busca</span>
           <div className="flex h-11 items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border)] bg-white px-4 transition focus-within:border-[color:var(--brand)] focus-within:ring-2 focus-within:ring-[color:var(--brand-soft)]">

@@ -49,8 +49,8 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
 
   return (
     <header className="overflow-hidden border-b border-[color:var(--border)] bg-white">
-      <div className="border-b border-[color:var(--border)] px-5 py-3 sm:px-6 xl:px-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="border-b border-[color:var(--border)] px-4 py-3 sm:px-5 lg:px-6 xl:px-8">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-5">
             <Image
               src="/mag-capitalizacao-logo.svg"
@@ -82,13 +82,13 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
         </div>
       </div>
 
-      <div className="px-5 py-5 sm:px-6 sm:py-6 xl:px-8">
-        <div className="space-y-4">
-            <div className="space-y-2">
-              <p className="mag-label text-[color:var(--brand)]">{activeContent.eyebrow}</p>
-              <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-[color:var(--brand-deep)] sm:text-[30px]">{portalTitle}</h1>
-              <p className="max-w-3xl text-base leading-7 text-slate-600">{activeContent.description}</p>
-            </div>
+      <div className="px-4 py-4 sm:px-5 lg:px-6 xl:px-8 xl:py-5 2xl:py-6">
+        <div className="space-y-3 2xl:space-y-4">
+          <div className="space-y-2">
+            <p className="mag-label text-[color:var(--brand)]">{activeContent.eyebrow}</p>
+            <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-[color:var(--brand-deep)] sm:text-[28px] 2xl:text-[30px]">{portalTitle}</h1>
+            <p className="max-w-4xl text-sm leading-6 text-slate-600 lg:text-[15px] 2xl:text-base 2xl:leading-7">{activeContent.description}</p>
+          </div>
 
             <nav aria-label="Navegação principal do portal" className="border-b border-[color:var(--border)]">
               <ul className="flex flex-wrap items-center gap-1 sm:gap-4">
@@ -101,7 +101,7 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
                       <Link
                         href={item.href}
                         className={[
-                          "inline-flex items-center gap-2 border-b-2 px-1 py-3 text-sm font-semibold transition",
+                          "inline-flex items-center gap-2 border-b-2 px-1 py-2.5 text-sm font-semibold transition 2xl:py-3",
                           isActive
                             ? "border-[color:var(--brand)] text-[color:var(--brand-deep)]"
                             : "border-transparent text-slate-600 hover:text-[color:var(--brand-deep)]"

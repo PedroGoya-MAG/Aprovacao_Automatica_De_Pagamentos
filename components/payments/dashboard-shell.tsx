@@ -748,7 +748,7 @@ export function DashboardShell({ initialBatches, initialSummary, initialLoadErro
   }
 
   return (
-    <section className="grid gap-6">
+    <section className="grid gap-5 2xl:gap-6">
       <ExecutiveAlertsPanel
         overview={suspicionOverview}
         onReviewAlerts={focusSuspiciousQueue}
@@ -813,7 +813,7 @@ export function DashboardShell({ initialBatches, initialSummary, initialLoadErro
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Resumo operacional</p>
           <p className="text-sm leading-6 text-slate-600">Panorama consolidado dos lotes que seguem no fluxo de aprovação e das carteiras ativas no período.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:gap-4">
           <SummaryCard icon={Layers3} label="Total de lotes pendentes" value={summary.pendingBatchCount.toString()} helper="Lotes com ao menos um pagamento pendente" tone="blue" />
           <SummaryCard icon={CalendarClock} label="Total de pagamentos pendentes" value={summary.pendingPaymentCount.toString()} helper="Itens aguardando aprovação" tone="blue" />
           <SummaryCard icon={CircleDollarSign} label="Valor total pendente" value={formatCurrency(summary.pendingTotalAmount)} helper="Montante ainda não liberado" tone="teal" />
@@ -822,7 +822,7 @@ export function DashboardShell({ initialBatches, initialSummary, initialLoadErro
         </div>
       </div>
 
-      <div id="operational-batches" className="grid gap-4 scroll-mt-24">
+      <div id="operational-batches" className="grid gap-4 scroll-mt-24 2xl:gap-5">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">Lotes liberados para decisao</p>
@@ -842,7 +842,7 @@ export function DashboardShell({ initialBatches, initialSummary, initialLoadErro
             description="Ajuste os filtros ou tente novamente quando houver lotes pendentes retornados pela API."
           />
         ) : (
-          <div className="grid gap-5 xl:grid-cols-1">
+          <div className="grid gap-4 xl:grid-cols-1 2xl:gap-5">
             {visibleBatches.map((batch) => (
               <BatchCard
                 key={batch.id}
@@ -943,9 +943,9 @@ function SummaryCard({ icon: Icon, label, value, helper, tone }: SummaryCardProp
   const iconTone = tone === "teal" ? "bg-emerald-50 text-emerald-700" : tone === "slate" ? "bg-slate-100 text-slate-700" : "bg-[color:var(--brand-soft)] text-[color:var(--brand-deep)]";
 
   return (
-    <div className={cn("h-full rounded-xl border-l-4 bg-white px-5 py-5 shadow-[var(--shadow-soft)]", borderTone)}>
-      <div className="flex h-full items-start gap-4">
-        <div className={cn("mt-0.5 flex h-11 w-11 items-center justify-center rounded-full", iconTone)}>
+    <div className={cn("h-full rounded-xl border-l-4 bg-white px-4 py-4 shadow-[var(--shadow-soft)] 2xl:px-5 2xl:py-5", borderTone)}>
+      <div className="flex h-full items-start gap-3 2xl:gap-4">
+        <div className={cn("mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full 2xl:h-11 2xl:w-11", iconTone)}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="space-y-1.5">
@@ -971,8 +971,8 @@ function ExecutiveAlertsPanel({ overview, onReviewAlerts }: ExecutiveAlertsPanel
     : "Nenhum pagamento suspeito permanece pendente de analise. O fluxo esta estabilizado e pronto para continuidade operacional.";
 
   return (
-    <div className={cn("panel overflow-hidden px-5 py-5 sm:px-6", isHealthy ? "border-emerald-300 bg-emerald-50/70" : "border-amber-200 bg-white")}>
-      <div className={cn("flex flex-col gap-5 pb-5 xl:flex-row xl:items-start xl:justify-between", isHealthy ? "border-b border-emerald-200" : "border-b border-[color:var(--border)]")}>
+    <div className={cn("panel overflow-hidden px-4 py-4 sm:px-5 2xl:px-6 2xl:py-5", isHealthy ? "border-emerald-300 bg-emerald-50/70" : "border-amber-200 bg-white")}>
+      <div className={cn("flex flex-col gap-4 pb-4 xl:flex-row xl:items-start xl:justify-between 2xl:gap-5 2xl:pb-5", isHealthy ? "border-b border-emerald-200" : "border-b border-[color:var(--border)]")}>
         <div className="space-y-3">
           <div className="flex items-center gap-3">
             <div className={cn("flex h-12 w-12 items-center justify-center rounded-full border", isHealthy ? "border-emerald-200 bg-emerald-100 text-emerald-700" : "border-amber-200 bg-amber-100 text-amber-700")}>
@@ -1014,7 +1014,7 @@ function AnalyticsAlertModel({ overview, recommendation }: { overview: Suspicion
 
   if (overview.unresolvedSuspiciousCount === 0) {
     return (
-      <div className="grid gap-4 xl:max-w-[320px]">
+      <div className="grid gap-3 xl:max-w-[300px] 2xl:gap-4 2xl:max-w-[320px]">
         <PanelMetric label="Semaforo executivo" value={statusLabel} tone={statusTone} />
       </div>
     );
@@ -1022,7 +1022,7 @@ function AnalyticsAlertModel({ overview, recommendation }: { overview: Suspicion
 
   return (
     <div className="grid gap-3">
-      <div className="grid gap-3 xl:grid-cols-[240px_minmax(0,1fr)]">
+      <div className="grid gap-3 xl:grid-cols-[220px_minmax(0,1fr)] 2xl:grid-cols-[240px_minmax(0,1fr)]">
         <PanelMetric label="Semaforo executivo" value={statusLabel} tone={statusTone} />
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <PanelMetric label="Lotes com suspeita" value={String(overview.suspiciousBatchCount)} tone={overview.suspiciousBatchCount > 0 ? "warning" : "success"} />
@@ -1031,8 +1031,8 @@ function AnalyticsAlertModel({ overview, recommendation }: { overview: Suspicion
           <PanelMetric label="Valor sob analise" value={formatCurrency(overview.totalValueUnderAnalysis)} tone={overview.totalValueUnderAnalysis > 0 ? "info" : "success"} />
         </div>
       </div>
-      <div className="sub-panel bg-[color:var(--surface-muted)] px-5 py-5">
-        <div className="grid gap-5 xl:grid-cols-[0.92fr_1.08fr]">
+      <div className="sub-panel bg-[color:var(--surface-muted)] px-4 py-4 2xl:px-5 2xl:py-5">
+        <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr] 2xl:gap-5">
           <div>
             <p className="text-sm font-semibold text-slate-950">Leitura consolidada</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">{recommendation}</p>
@@ -1055,7 +1055,7 @@ function AnalyticsAlertModel({ overview, recommendation }: { overview: Suspicion
 }
 
 function PanelMetric({ label, value, tone }: { label: string; value: string; tone: "warning" | "critical" | "success" | "info" }) {
-  return <div className={cn("flex min-h-[88px] flex-col justify-between rounded-xl border-l-4 px-4 py-3", tone === "critical" && "border-rose-500 bg-rose-100", tone === "warning" && "border-amber-500 bg-amber-100", tone === "success" && "border-emerald-400 bg-emerald-50", tone === "info" && "border-sky-400 bg-sky-50")}><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 text-xl font-semibold text-slate-950">{value}</p></div>;
+  return <div className={cn("flex min-h-[78px] flex-col justify-between rounded-xl border-l-4 px-3 py-3 2xl:min-h-[88px] 2xl:px-4", tone === "critical" && "border-rose-500 bg-rose-100", tone === "warning" && "border-amber-500 bg-amber-100", tone === "success" && "border-emerald-400 bg-emerald-50", tone === "info" && "border-sky-400 bg-sky-50")}><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</p><p className="mt-2 text-lg font-semibold text-slate-950 2xl:text-xl">{value}</p></div>;
 }
 
 function CompactInfo({ label, value }: { label: string; value: string }) {
@@ -1117,7 +1117,7 @@ function PendingSuspiciousQueue(props: {
 
   return (
     <section id="suspicious-queue" className="grid gap-5 scroll-mt-24">
-      <div className="panel border-amber-300 bg-amber-100 px-5 py-5 sm:px-6">
+      <div className="panel border-amber-300 bg-amber-100 px-4 py-4 sm:px-5 2xl:px-6 2xl:py-5">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-amber-800">Pagamentos suspeitos pendentes</p>
@@ -1130,7 +1130,7 @@ function PendingSuspiciousQueue(props: {
         </div>
       </div>
 
-      <div className="grid gap-5">
+      <div className="grid gap-4 2xl:gap-5">
         {batches.map((batch) => (
           <BatchCard
             key={batch.id}
@@ -1196,13 +1196,13 @@ function BatchCard(props: BatchCardProps) {
   const hasSuspiciousPending = batch.alert.unresolvedSuspiciousCount > 0;
   const actionDisabled = !canManageApprovals || pendingCount === 0 || processingBatchId === batch.id || hasSuspiciousPending;
 
-  return <article className={cn("panel relative overflow-hidden rounded-xl border-2", hasSuspiciousPending ? (batch.alert.severity === "critical" ? "border-rose-500 bg-rose-50/60" : "border-amber-500 bg-amber-50/80") : "border-[color:var(--border)]")}><div className={cn("absolute inset-x-0 top-0 h-1.5", batch.benefitType === "SORTEIO" ? "bg-[color:var(--brand)]" : "bg-emerald-600")} /><div className="flex flex-col gap-5 px-5 py-5 sm:px-6"><div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between"><div className="space-y-4"><div className="flex flex-wrap items-center gap-3"><BenefitBadge benefitType={batch.benefitType} /><BatchProcessingBadge pendingCount={pendingCount} approvedCount={approvedCount} rejectedCount={rejectedCount} />{batch.alert.totalSuspiciousCount > 0 ? <SuspiciousFlagBadge severity={batch.alert.severity ?? "warning"} label={`${batch.alert.totalSuspiciousCount} suspeito(s)`} /> : null}</div><div className="space-y-2"><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Identificador do lote</p><h3 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">{batch.batchNumber}</h3><p className="text-sm text-slate-600">{formatBenefitType(batch.benefitType)} com {paymentCount} pagamento(s), programado para {formatDate(batch.scheduledAt)}.</p></div></div><div className="flex shrink-0 flex-col gap-3 sm:flex-row lg:flex-col">{canManageApprovals ? <Button type="button" variant="primary" disabled={actionDisabled} onClick={onApproveBatch}>Aprovar lote</Button> : null}<Button type="button" variant="secondary" onClick={onExpandToggle}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{isExpanded ? "Ocultar detalhes" : "Expandir detalhes"}</Button></div></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${paymentCount}`} /><MetricPill icon={CircleDollarSign} label="Valor total do lote" value={formatCurrency(totalValue)} /><MetricPill icon={CalendarDays} label="Status do lote" value={describeBatchProcessing(pendingCount, approvedCount, rejectedCount)} /><MetricPill icon={CircleCheckBig} label="Selecionados para aprovação" value={`${selectedCount}`} /></div><div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 text-sm text-slate-600"><BenefitBadge benefitType={batch.benefitType} /><span className="data-chip">Competência: {batch.competence}</span><span className="data-chip">Pendentes: {pendingCount}</span><span className="data-chip">Aprovados: {approvedCount}</span><span className="data-chip">Rejeitados: {rejectedCount}</span>{batch.alert.totalSuspiciousCount > 0 ? <span className="data-chip">Suspeitos: {batch.alert.totalSuspiciousCount}</span> : null}</div>{hasSuspiciousPending ? <div className="rounded-lg border border-amber-400 bg-amber-100 px-4 py-3 text-sm font-medium text-amber-950">Este lote possui pagamentos suspeitos pendentes de revisão. Trate os itens sinalizados antes de liberar aprovação ampla.</div> : null}{isExpanded ? (isLoadingPayments ? <LoadingBatchPayments /> : batch.hasPaymentDetails ? <PaymentList batchId={batch.id} batchPayments={batchPayments} payments={batch.visiblePayments} totalPayments={paymentCount} selectedIds={selectedIds} alertMap={alertMap} reviewedSuspiciousIds={reviewedSuspiciousIds} canManageApprovals={canManageApprovals} onApproveSelected={onApproveSelected} onToggleAllSelections={onToggleAllSelections} onPaymentSelectionChange={onPaymentSelectionChange} onPaymentApprove={onPaymentApprove} onPaymentReject={onPaymentReject} onPaymentRestore={onPaymentRestore} onShowDetails={onShowDetails} onToggleReviewed={onToggleReviewed} processingPaymentId={processingPaymentId} isProcessingBatch={processingBatchId === batch.id} /> : hasLoadedPayments ? <EmptyBatchPayments batchNumber={batch.batchNumber} /> : <UnavailablePaymentDetails />) : null}</div></article>;
+  return <article className={cn("panel relative overflow-hidden rounded-xl border-2", hasSuspiciousPending ? (batch.alert.severity === "critical" ? "border-rose-500 bg-rose-50/60" : "border-amber-500 bg-amber-50/80") : "border-[color:var(--border)]")}><div className={cn("absolute inset-x-0 top-0 h-1.5", batch.benefitType === "SORTEIO" ? "bg-[color:var(--brand)]" : "bg-emerald-600")} /><div className="flex flex-col gap-4 px-4 py-4 sm:px-5 2xl:gap-5 2xl:px-6 2xl:py-5"><div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between 2xl:gap-5"><div className="min-w-0 space-y-3 2xl:space-y-4"><div className="flex flex-wrap items-center gap-2 2xl:gap-3"><BenefitBadge benefitType={batch.benefitType} /><BatchProcessingBadge pendingCount={pendingCount} approvedCount={approvedCount} rejectedCount={rejectedCount} />{batch.alert.totalSuspiciousCount > 0 ? <SuspiciousFlagBadge severity={batch.alert.severity ?? "warning"} label={`${batch.alert.totalSuspiciousCount} suspeito(s)`} /> : null}</div><div className="space-y-1.5 2xl:space-y-2"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 2xl:text-sm 2xl:tracking-[0.18em]">Identificador do lote</p><h3 className="text-xl font-semibold tracking-[-0.03em] text-slate-950 2xl:text-2xl 2xl:tracking-[-0.04em]">{batch.batchNumber}</h3><p className="text-sm leading-6 text-slate-600">{formatBenefitType(batch.benefitType)} com {paymentCount} pagamento(s), programado para {formatDate(batch.scheduledAt)}.</p></div></div><div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col 2xl:gap-3">{canManageApprovals ? <Button type="button" variant="primary" disabled={actionDisabled} onClick={onApproveBatch}>Aprovar lote</Button> : null}<Button type="button" variant="secondary" onClick={onExpandToggle}>{isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{isExpanded ? "Ocultar detalhes" : "Expandir detalhes"}</Button></div></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><MetricPill icon={Layers3} label="Quantidade de pagamentos" value={`${paymentCount}`} /><MetricPill icon={CircleDollarSign} label="Valor total do lote" value={formatCurrency(totalValue)} /><MetricPill icon={CalendarDays} label="Status do lote" value={describeBatchProcessing(pendingCount, approvedCount, rejectedCount)} /><MetricPill icon={CircleCheckBig} label="Selecionados para aprovação" value={`${selectedCount}`} /></div><div className="flex flex-wrap items-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-muted)] px-3 py-3 text-sm text-slate-600 2xl:px-4"><BenefitBadge benefitType={batch.benefitType} /><span className="data-chip">Competência: {batch.competence}</span><span className="data-chip">Pendentes: {pendingCount}</span><span className="data-chip">Aprovados: {approvedCount}</span><span className="data-chip">Rejeitados: {rejectedCount}</span>{batch.alert.totalSuspiciousCount > 0 ? <span className="data-chip">Suspeitos: {batch.alert.totalSuspiciousCount}</span> : null}</div>{hasSuspiciousPending ? <div className="rounded-lg border border-amber-400 bg-amber-100 px-3 py-3 text-sm font-medium text-amber-950 2xl:px-4">Este lote possui pagamentos suspeitos pendentes de revisão. Trate os itens sinalizados antes de liberar aprovação ampla.</div> : null}{isExpanded ? (isLoadingPayments ? <LoadingBatchPayments /> : batch.hasPaymentDetails ? <PaymentList batchId={batch.id} batchPayments={batchPayments} payments={batch.visiblePayments} totalPayments={paymentCount} selectedIds={selectedIds} alertMap={alertMap} reviewedSuspiciousIds={reviewedSuspiciousIds} canManageApprovals={canManageApprovals} onApproveSelected={onApproveSelected} onToggleAllSelections={onToggleAllSelections} onPaymentSelectionChange={onPaymentSelectionChange} onPaymentApprove={onPaymentApprove} onPaymentReject={onPaymentReject} onPaymentRestore={onPaymentRestore} onShowDetails={onShowDetails} onToggleReviewed={onToggleReviewed} processingPaymentId={processingPaymentId} isProcessingBatch={processingBatchId === batch.id} /> : hasLoadedPayments ? <EmptyBatchPayments batchNumber={batch.batchNumber} /> : <UnavailablePaymentDetails />) : null}</div></article>;
 }
 
-function UnavailablePaymentDetails() { return <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600"><p className="section-title">Detalhes do lote</p><p>Expanda o lote para carregar os pagamentos diretamente da API e preencher esta área em tempo real.</p></div>; }
-function LoadingBatchPayments() { return <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600"><p className="section-title">Carregando pagamentos</p><div className="grid gap-3 sm:grid-cols-2"><div className="h-20 animate-pulse rounded-xl bg-slate-100" /><div className="h-20 animate-pulse rounded-xl bg-slate-100" /></div></div>; }
-function EmptyBatchPayments({ batchNumber }: { batchNumber: string }) { return <div className="sub-panel flex flex-col gap-3 px-5 py-5 text-sm text-slate-600"><p className="section-title">Nenhum pagamento retornado</p><p>O lote {batchNumber} foi encontrado, mas a API não retornou pagamentos para esta consulta.</p></div>; }
-function MetricPill({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value: string }) { return <div className="flex items-center gap-3 rounded-lg border-l-4 border-slate-300 bg-[color:var(--surface-muted)] px-4 py-3"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-white"><Icon className="h-4 w-4 text-[color:var(--brand-deep)]" /></div><div className="space-y-0.5"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p><p className="text-sm font-semibold text-slate-950">{value}</p></div></div>; }
+function UnavailablePaymentDetails() { return <div className="sub-panel flex flex-col gap-3 px-4 py-4 text-sm text-slate-600 2xl:px-5 2xl:py-5"><p className="section-title">Detalhes do lote</p><p>Expanda o lote para carregar os pagamentos diretamente da API e preencher esta área em tempo real.</p></div>; }
+function LoadingBatchPayments() { return <div className="sub-panel flex flex-col gap-3 px-4 py-4 text-sm text-slate-600 2xl:px-5 2xl:py-5"><p className="section-title">Carregando pagamentos</p><div className="grid gap-3 sm:grid-cols-2"><div className="h-20 animate-pulse rounded-xl bg-slate-100" /><div className="h-20 animate-pulse rounded-xl bg-slate-100" /></div></div>; }
+function EmptyBatchPayments({ batchNumber }: { batchNumber: string }) { return <div className="sub-panel flex flex-col gap-3 px-4 py-4 text-sm text-slate-600 2xl:px-5 2xl:py-5"><p className="section-title">Nenhum pagamento retornado</p><p>O lote {batchNumber} foi encontrado, mas a API não retornou pagamentos para esta consulta.</p></div>; }
+function MetricPill({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value: string }) { return <div className="flex min-w-0 items-center gap-3 rounded-lg border-l-4 border-slate-300 bg-[color:var(--surface-muted)] px-3 py-3 2xl:px-4"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white 2xl:h-10 2xl:w-10"><Icon className="h-4 w-4 text-[color:var(--brand-deep)]" /></div><div className="min-w-0 space-y-0.5"><p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 2xl:text-xs 2xl:tracking-[0.16em]">{label}</p><p className="break-words text-sm font-semibold text-slate-950">{value}</p></div></div>; }
 
 function BatchProcessingBadge({ pendingCount, approvedCount, rejectedCount }: { pendingCount: number; approvedCount: number; rejectedCount: number }) { if (pendingCount === 0 && rejectedCount === 0 && approvedCount > 0) return <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-800">Lote aprovado</span>; if (pendingCount === 0 && approvedCount === 0 && rejectedCount > 0) return <span className="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">Lote rejeitado</span>; return <div className="flex flex-wrap items-center gap-2"><span className="inline-flex items-center rounded-full bg-sky-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-800">{approvedCount} aprovado(s)</span><span className="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">{rejectedCount} rejeitado(s)</span>{pendingCount > 0 ? <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-800">{pendingCount} pendente(s)</span> : null}</div>; }
 
@@ -1262,7 +1262,7 @@ function PaymentList(props: {
 
   return (
     <div id={`batch-payments-${batchId}`} className="sub-panel scroll-mt-24 overflow-hidden rounded-xl">
-      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-3 border-b border-[color:var(--border)] px-4 py-3 lg:flex-row lg:items-center lg:justify-between 2xl:gap-4 2xl:px-5 2xl:py-4">
         <div>
           <p className="section-title">Pagamentos do lote</p>
           <p className="mt-1 text-sm text-slate-600">
@@ -1284,7 +1284,7 @@ function PaymentList(props: {
         )}
       </div>
 
-      <div className="flex flex-col gap-4 border-b border-[color:var(--border)] bg-[color:var(--surface-muted)] px-5 py-4">
+      <div className="flex flex-col gap-3 border-b border-[color:var(--border)] bg-[color:var(--surface-muted)] px-4 py-3 2xl:gap-4 2xl:px-5 2xl:py-4">
         <label className="flex items-center gap-3 text-sm font-medium text-slate-700">
           <input
             type="checkbox"
@@ -1305,17 +1305,17 @@ function PaymentList(props: {
       </div>
 
       <div className="overflow-x-auto">
-        <table className="min-w-full border-separate border-spacing-0">
+        <table className="min-w-[1120px] border-separate border-spacing-0 xl:min-w-full">
           <thead className="bg-[color:var(--surface-muted)]">
             <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              <th className="px-5 py-4">Selecionar</th>
-              <th className="px-4 py-4">Beneficiario</th>
-              <th className="px-4 py-4">Documento</th>
-              <th className="px-4 py-4">Valor bruto</th>
-              <th className="px-4 py-4">Data pagamento</th>
-              <th className="px-4 py-4">Status</th>
-              <th className="px-4 py-4">Risco</th>
-              <th className="px-4 py-4">Acoes</th>
+              <th className="px-4 py-3 2xl:px-5 2xl:py-4">Selecionar</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Beneficiario</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Documento</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Valor bruto</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Data pagamento</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Status</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Risco</th>
+              <th className="px-3 py-3 2xl:px-4 2xl:py-4">Acoes</th>
             </tr>
           </thead>
           <tbody>
@@ -1336,7 +1336,7 @@ function PaymentList(props: {
                     !isSuspicious && isSelected && isPending && "bg-sky-50/70"
                   )}
                 >
-                  <td className="px-5 py-4">
+                  <td className="px-4 py-3 2xl:px-5 2xl:py-4">
                     <input
                       type="checkbox"
                       checked={isPending && isSelected}
@@ -1345,7 +1345,7 @@ function PaymentList(props: {
                       className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand)] focus:ring-[color:var(--brand)]"
                     />
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-3 2xl:px-4 2xl:py-4">
                     <div className="min-w-[220px]">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold text-slate-900">{payment.beneficiaryName}</p>
@@ -1357,15 +1357,15 @@ function PaymentList(props: {
                       <p className="text-sm text-slate-500">{payment.reference}</p>
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-sm text-slate-600">{formatDocument(payment.document)}</td>
-                  <td className="px-4 py-4 text-sm font-semibold text-slate-900">
+                  <td className="px-3 py-3 text-sm text-slate-600 2xl:px-4 2xl:py-4">{formatDocument(payment.document)}</td>
+                  <td className="px-3 py-3 text-sm font-semibold text-slate-900 2xl:px-4 2xl:py-4">
                     {formatCurrency(payment.grossAmount)}
                   </td>
-                  <td className="px-4 py-4 text-sm text-slate-600">{formatDate(payment.paymentDate)}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-3 text-sm text-slate-600 2xl:px-4 2xl:py-4">{formatDate(payment.paymentDate)}</td>
+                  <td className="px-3 py-3 2xl:px-4 2xl:py-4">
                     <StatusBadge status={payment.status} />
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-3 2xl:px-4 2xl:py-4">
                     {isSuspicious ? (
                       <div className="space-y-2">
                         <p className="text-xs leading-5 text-slate-700">
@@ -1377,7 +1377,7 @@ function PaymentList(props: {
                             variant="secondary"
                             size="sm"
                             className={cn(
-                              "min-h-10 min-w-[148px] justify-center whitespace-nowrap rounded-lg border px-4 py-2 text-sm font-semibold shadow-sm",
+                              "min-h-9 min-w-[132px] justify-center whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm 2xl:min-h-10 2xl:min-w-[148px] 2xl:px-4",
                               isReviewed
                                 ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
                                 : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200"
@@ -1392,7 +1392,7 @@ function PaymentList(props: {
                       <span className="text-sm text-slate-500">Sem alerta</span>
                     )}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-3 2xl:px-4 2xl:py-4">
                     <div className="flex justify-end gap-2">
                       <Button type="button" variant="ghost" size="sm" onClick={() => onShowDetails(payment.id)}>
                         <Eye className="h-4 w-4" />
@@ -1441,8 +1441,8 @@ function PaymentList(props: {
   );
 }
 
-function RejectionReasonModal({ draft, payment, isSubmitting, onChangeReason, onClose, onConfirm }: { draft: RejectionDraft; payment?: Payment; isSubmitting: boolean; onChangeReason: (reason: string) => void; onClose: () => void; onConfirm: () => void; }) { if (!draft || !payment) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar modal de rejeição" /><div className="panel relative z-10 w-full max-w-xl px-6 py-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Rejeitar pagamento</p><h3 className="mt-2 text-2xl font-semibold text-slate-950">{payment.beneficiaryName}</h3></div><Button type="button" variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button></div><label className="mt-5 block"><span className="mb-2 block text-sm font-semibold text-slate-800">Motivo da rejeição</span><textarea value={draft.reason} onChange={(event) => onChangeReason(event.target.value)} rows={5} placeholder="Descreva por que este pagamento está sendo rejeitado..." className="w-full rounded-lg border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[color:var(--brand)] focus:ring-2 focus:ring-sky-100" /></label><div className="mt-5 flex flex-wrap justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="button" variant="danger" onClick={onConfirm} disabled={isSubmitting}>Confirmar rejeição</Button></div></div></div>; }
-function ApproveAllConfirmDialog({ isOpen, batchCount, isSubmitting, onClose, onConfirm }: { isOpen: boolean; batchCount: number; isSubmitting: boolean; onClose: () => void; onConfirm: () => void; }) { if (!isOpen) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar confirmação" /><div className="panel relative z-10 w-full max-w-lg px-6 py-6"><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Confirmar aprovação</p><h3 className="mt-2 text-2xl font-semibold text-slate-950">Aprovar todos os lotes visíveis</h3><p className="mt-3 text-sm leading-6 text-slate-600">Essa ação realizará a aprovação de todos os lotes disponíveis em tela. Deseja prosseguir com {batchCount} lote(s)?</p><div className="mt-6 flex flex-wrap justify-end gap-3"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="button" variant="primary" onClick={onConfirm} disabled={isSubmitting}>Confirmar aprovação</Button></div></div></div>; }
+function RejectionReasonModal({ draft, payment, isSubmitting, onChangeReason, onClose, onConfirm }: { draft: RejectionDraft; payment?: Payment; isSubmitting: boolean; onChangeReason: (reason: string) => void; onClose: () => void; onConfirm: () => void; }) { if (!draft || !payment) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar modal de rejeição" /><div className="panel relative z-10 w-full max-w-xl px-4 py-4 sm:px-5 2xl:px-6 2xl:py-6"><div className="flex items-start justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Rejeitar pagamento</p><h3 className="mt-2 text-xl font-semibold text-slate-950 2xl:text-2xl">{payment.beneficiaryName}</h3></div><Button type="button" variant="ghost" size="icon" onClick={onClose}><X className="h-5 w-5" /></Button></div><label className="mt-4 block 2xl:mt-5"><span className="mb-2 block text-sm font-semibold text-slate-800">Motivo da rejeição</span><textarea value={draft.reason} onChange={(event) => onChangeReason(event.target.value)} rows={5} placeholder="Descreva por que este pagamento está sendo rejeitado..." className="w-full rounded-lg border border-[color:var(--border)] bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[color:var(--brand)] focus:ring-2 focus:ring-sky-100" /></label><div className="mt-4 flex flex-wrap justify-end gap-3 2xl:mt-5"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="button" variant="danger" onClick={onConfirm} disabled={isSubmitting}>Confirmar rejeição</Button></div></div></div>; }
+function ApproveAllConfirmDialog({ isOpen, batchCount, isSubmitting, onClose, onConfirm }: { isOpen: boolean; batchCount: number; isSubmitting: boolean; onClose: () => void; onConfirm: () => void; }) { if (!isOpen) return null; return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 px-4" role="dialog" aria-modal="true"><button type="button" className="absolute inset-0 cursor-default" onClick={onClose} aria-label="Fechar confirmação" /><div className="panel relative z-10 w-full max-w-lg px-4 py-4 sm:px-5 2xl:px-6 2xl:py-6"><p className="text-sm font-semibold uppercase tracking-[0.14em] text-[color:var(--brand)]">Confirmar aprovação</p><h3 className="mt-2 text-xl font-semibold text-slate-950 2xl:text-2xl">Aprovar todos os lotes visíveis</h3><p className="mt-3 text-sm leading-6 text-slate-600">Essa ação realizará a aprovação de todos os lotes disponíveis em tela. Deseja prosseguir com {batchCount} lote(s)?</p><div className="mt-5 flex flex-wrap justify-end gap-3 2xl:mt-6"><Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button><Button type="button" variant="primary" onClick={onConfirm} disabled={isSubmitting}>Confirmar aprovação</Button></div></div></div>; }
 
 function PaymentDetailsDrawer({
   batch,
@@ -1495,8 +1495,8 @@ function PaymentDetailsDrawer({
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/25" role="dialog" aria-modal="true">
       <button type="button" aria-label="Fechar detalhes" className="absolute inset-0 cursor-default" onClick={onClose} />
 
-      <aside className="relative flex h-full w-full max-w-[680px] flex-col border-l border-[color:var(--border)] bg-white shadow-sm">
-        <div className="border-b border-[color:var(--border)] px-6 py-5">
+      <aside className="relative flex h-full w-full max-w-[640px] flex-col border-l border-[color:var(--border)] bg-white shadow-sm 2xl:max-w-[680px]">
+        <div className="border-b border-[color:var(--border)] px-4 py-4 sm:px-5 2xl:px-6 2xl:py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-2">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">Detalhes do pagamento</p>
@@ -1517,7 +1517,7 @@ function PaymentDetailsDrawer({
           </div>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5 2xl:space-y-6 2xl:px-6 2xl:py-6">
           <div className="grid gap-3 sm:grid-cols-2">
             <DetailBlock icon={ShieldCheck} label="Nome do beneficiário" value={payment.beneficiaryName} />
             <DetailBlock icon={FileBadge2} label="Documento do beneficiário" value={formatDocument(payment.document)} />
@@ -1534,7 +1534,7 @@ function PaymentDetailsDrawer({
               description="Regras que colocaram este pagamento fora do ponto medio esperado."
             >
               <div className="space-y-3">
-                <div className="rounded-lg bg-amber-50 px-4 py-4 text-sm leading-6 text-amber-900">
+                <div className="rounded-lg bg-amber-50 px-3 py-3 text-sm leading-6 text-amber-900 2xl:px-4 2xl:py-4">
                   {paymentAlert?.reasons.map(formatSuspicionReason).join(" • ")}
                 </div>
 
@@ -1543,7 +1543,7 @@ function PaymentDetailsDrawer({
                     type="button"
                     variant="secondary"
                     className={cn(
-                      "min-h-10 min-w-[148px] whitespace-nowrap rounded-lg border px-4 py-2.5 text-sm font-semibold shadow-sm",
+                      "min-h-9 min-w-[132px] whitespace-nowrap rounded-lg border px-3 py-2 text-sm font-semibold shadow-sm 2xl:min-h-10 2xl:min-w-[148px] 2xl:px-4 2xl:py-2.5",
                       isReviewed
                         ? "border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100"
                         : "border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200"
@@ -1562,13 +1562,13 @@ function PaymentDetailsDrawer({
             title="Observacoes"
             description="Contexto de apoio para a revisão antes da decisão."
           >
-            <div className="rounded-lg bg-[color:var(--surface-muted)] px-4 py-4 text-sm leading-6 text-slate-700">
+            <div className="rounded-lg bg-[color:var(--surface-muted)] px-3 py-3 text-sm leading-6 text-slate-700 2xl:px-4 2xl:py-4">
               {isLoading ? "Atualizando detalhes do pagamento com os dados mais recentes do backend..." : observation}
             </div>
           </DrawerSection>
         </div>
 
-        <div className="border-t border-[color:var(--border)] bg-white px-6 py-5">
+        <div className="border-t border-[color:var(--border)] bg-white px-4 py-4 sm:px-5 2xl:px-6 2xl:py-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm text-slate-600">
               {canManageApprovals
@@ -1615,8 +1615,8 @@ function PaymentDetailsDrawer({
     </div>
   );
 }
-function DrawerSection({ icon: Icon, title, description, children }: { icon: ComponentType<{ className?: string }>; title: string; description: string; children: ReactNode; }) { return <section className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-5"><div className="flex items-start gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)]"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="flex-1 space-y-4"><div><p className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p><p className="mt-1 text-sm text-slate-600">{description}</p></div>{children}</div></div></section>; }
-function DetailBlock({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value?: string; }) { return <div className="rounded-xl border border-[color:var(--border)] bg-white px-5 py-4"><div className="flex items-start gap-4"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)]"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="space-y-1"><p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">{label}</p><p className="text-base font-semibold text-slate-950">{value ?? "-"}</p></div></div></div>; }
+function DrawerSection({ icon: Icon, title, description, children }: { icon: ComponentType<{ className?: string }>; title: string; description: string; children: ReactNode; }) { return <section className="rounded-xl border border-[color:var(--border)] bg-white px-4 py-4 2xl:px-5 2xl:py-5"><div className="flex items-start gap-3 2xl:gap-4"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)] 2xl:h-11 2xl:w-11"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="min-w-0 flex-1 space-y-3 2xl:space-y-4"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500 2xl:text-sm 2xl:tracking-[0.18em]">{title}</p><p className="mt-1 text-sm text-slate-600">{description}</p></div>{children}</div></div></section>; }
+function DetailBlock({ icon: Icon, label, value }: { icon: ComponentType<{ className?: string }>; label: string; value?: string; }) { return <div className="rounded-xl border border-[color:var(--border)] bg-white px-4 py-3 2xl:px-5 2xl:py-4"><div className="flex items-start gap-3 2xl:gap-4"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)] 2xl:h-11 2xl:w-11"><Icon className="h-5 w-5 text-[color:var(--brand-deep)]" /></div><div className="min-w-0 space-y-1"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 2xl:text-sm 2xl:tracking-[0.16em]">{label}</p><p className="break-words text-sm font-semibold text-slate-950 2xl:text-base">{value ?? "-"}</p></div></div></div>; }
 function SuspiciousFlagBadge({ severity, label = "Suspeito" }: { severity: AlertSeverity; label?: string }) { return <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]", severity === "critical" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800")}><AlertTriangle className="h-3.5 w-3.5" />{label}</span>; }
 function ReviewBadge() { return <span className="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-800">Revisado</span>; }
 function getPaymentObservation(payment: Payment, batch: PaymentBatch) { const benefitLabel = formatBenefitType(batch.benefitType).toLowerCase(); if (payment.status === "APPROVED") return `Pagamento de ${benefitLabel} validado para liberação, sem divergências documentais e mantido no lote ${batch.batchNumber}.`; if (payment.status === "REJECTED") return `Pagamento retirado do lote ${batch.batchNumber} para revisão manual. É recomendado validar os dados cadastrais antes de uma nova submissão.`; return "Pagamento aguardando decisão da gestora. A recomendação é conferir documento, valor bruto e enquadramento do benefício antes da aprovação final."; }
