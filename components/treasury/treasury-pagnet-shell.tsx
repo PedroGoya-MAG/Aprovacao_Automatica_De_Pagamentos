@@ -94,20 +94,6 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
   return (
     <div className="space-y-6">
       <section className="panel px-5 py-5 sm:px-6">
-        <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--brand)]">Tesouraria</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Importações no PagNet</h2>
-          <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            Consulte os pagamentos importados para o PagNet com leitura operacional por dia de importação, busca rápida e filtros simples para acompanhamento do time de tesouraria.
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="data-chip">Última importação: {latestImportedLabel}</span>
-            <span className="data-chip">Janela padrão: últimos 15 dias</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel px-5 py-5 sm:px-6">
         <div className="grid gap-4 xl:grid-cols-[220px_220px_minmax(0,1fr)_220px_auto] xl:items-end">
           <FilterField label="Importado de">
             <input type="date" value={importedFrom} onChange={(event) => setImportedFrom(event.target.value)} className="mag-input" />
@@ -160,6 +146,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+          <span className="data-chip">Última importação: {latestImportedLabel}</span>
           {!hasActiveFilters ? <span className="data-chip">Período padrão: últimos 15 dias carregados</span> : null}
           <span className="data-chip">{visiblePayments.length} pagamento(s)</span>
           <span className="data-chip">{formatCurrency(totalVisibleAmount)}</span>
