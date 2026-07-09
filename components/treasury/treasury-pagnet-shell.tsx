@@ -92,9 +92,9 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
   const latestImportedLabel = latestImportedDate ? formatLongDate(latestImportedDate, "payment.importedAt") : "Sem importações carregadas";
 
   return (
-    <div className="space-y-6">
-      <section className="panel px-5 py-5 sm:px-6">
-        <div className="grid gap-4 xl:grid-cols-[220px_220px_minmax(0,1fr)_220px_auto] xl:items-end">
+    <div className="space-y-5">
+      <section className="panel px-4 py-4 sm:px-5">
+        <div className="grid gap-3 lg:grid-cols-[180px_180px_minmax(260px,1fr)_160px] lg:items-end 2xl:grid-cols-[220px_220px_minmax(0,1fr)_220px_auto]">
           <FilterField label="Importado de">
             <input type="date" value={importedFrom} onChange={(event) => setImportedFrom(event.target.value)} className="mag-input" />
           </FilterField>
@@ -127,7 +127,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
             />
           </FilterField>
 
-          <div className="flex justify-end xl:pb-[1px]">
+          <div className="flex justify-start lg:col-span-4 2xl:col-span-1 2xl:justify-end 2xl:pb-[1px]">
             <Button
               type="button"
               variant="ghost"
@@ -145,7 +145,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-600">
           <span className="data-chip">Última importação: {latestImportedLabel}</span>
           {!hasActiveFilters ? <span className="data-chip">Período padrão: últimos 15 dias carregados</span> : null}
           <span className="data-chip">{visiblePayments.length} pagamento(s)</span>
@@ -162,7 +162,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
         ) : (
           groupedPayments.map((group) => (
             <article key={group.importedDate} className="panel overflow-hidden">
-              <div className="flex flex-col gap-3 border-b border-[color:var(--border)] px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex flex-col gap-3 border-b border-[color:var(--border)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                     <CalendarRange className="h-4 w-4 text-[color:var(--brand)]" />
@@ -178,7 +178,7 @@ export function TreasuryPagnetShell({ initialPayments }: TreasuryPagnetShellProp
 
               <TableShell className="rounded-none border-0 shadow-none">
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table className="[&_td]:px-3 [&_td]:py-3 [&_th]:px-3 [&_th]:py-3">
                     <TableHead>
                       <tr>
                         <TableHeaderCell>Valor</TableHeaderCell>

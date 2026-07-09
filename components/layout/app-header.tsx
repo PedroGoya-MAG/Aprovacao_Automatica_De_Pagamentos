@@ -1,7 +1,7 @@
 import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, CalendarRange, ClipboardCheck, History, ShieldCheck } from "lucide-react";
+import { Building2, CalendarRange, ClipboardCheck, History } from "lucide-react";
 
 import { canAccessTab, formatRoleLabel } from "@/lib/auth/access";
 import { getServerSession } from "@/lib/auth/session";
@@ -17,35 +17,27 @@ const navItems: Array<{ label: string; icon: typeof ClipboardCheck; href: Route;
 
 const activeDescriptions: Record<
   AppHeaderTab,
-  { eyebrow: string; description: string; sideTitle: string; sideText: string }
+  { eyebrow: string; description: string }
 > = {
   approvals: {
     eyebrow: "Aprovações",
     description:
-      "Acompanhe lotes, avalie pagamentos e conduza aprovações com uma visão clara, objetiva e alinhada ao fluxo interno da CAP.",
-    sideTitle: "Operação de aprovação",
-    sideText: "Painel preparado para decisão rápida por lote, com filtros, detalhes individuais e visão consolidada da operação."
+      "Acompanhe lotes, avalie pagamentos e conduza aprovações com uma visão clara, objetiva e alinhada ao fluxo interno da CAP."
   },
   history: {
     eyebrow: "Histórico",
     description:
-      "Consulte lotes e pagamentos já processados com foco em rastreabilidade, leitura executiva e análise posterior da operação.",
-    sideTitle: "Consulta histórica",
-    sideText: "Visão orientada a consulta e revisão, com filtros por competência, status, benefício e alertas já identificados."
+      "Consulte lotes e pagamentos já processados com foco em rastreabilidade, leitura executiva e análise posterior da operação."
   },
   monthly: {
     eyebrow: "Visão mensal",
     description:
-      "Acompanhe o comportamento do mês com indicadores, volumes recebidos e sinais de atenção para leitura gerencial da operação.",
-    sideTitle: "Leitura gerencial",
-    sideText: "Área preparada para acompanhar totais do mês, motivos de suspeita e comportamento diário e semanal dos pagamentos."
+      "Acompanhe o comportamento do mês com indicadores, volumes recebidos e sinais de atenção para leitura gerencial da operação."
   },
   treasury: {
     eyebrow: "Tesouraria",
     description:
-      "Consulte os pagamentos importados no PagNet com visão operacional por data de importação, busca rápida e filtros objetivos.",
-    sideTitle: "Monitoramento de importações",
-    sideText: "Tela somente leitura para acompanhamento do que já foi importado para o PagNet, agrupado por dia de importação."
+      "Consulte os pagamentos importados no PagNet com visão operacional por data de importação, busca rápida e filtros objetivos."
   }
 };
 
@@ -90,12 +82,11 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
         </div>
       </div>
 
-      <div className="px-5 py-6 sm:px-6 sm:py-8 xl:px-8">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-          <div className="space-y-5">
+      <div className="px-5 py-5 sm:px-6 sm:py-6 xl:px-8">
+        <div className="space-y-4">
             <div className="space-y-2">
               <p className="mag-label text-[color:var(--brand)]">{activeContent.eyebrow}</p>
-              <h1 className="text-[32px] font-bold leading-tight tracking-[-0.02em] text-[color:var(--brand-deep)] sm:text-[32px]">{portalTitle}</h1>
+              <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-[color:var(--brand-deep)] sm:text-[30px]">{portalTitle}</h1>
               <p className="max-w-3xl text-base leading-7 text-slate-600">{activeContent.description}</p>
             </div>
 
@@ -124,19 +115,6 @@ export async function AppHeader({ activeTab = "approvals" }: { activeTab?: AppHe
                 })}
               </ul>
             </nav>
-          </div>
-
-          <div className="panel-dark px-5 py-4">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] border border-white/15 bg-white/10">
-                <ShieldCheck className="h-5 w-5 text-[color:var(--mag-green)]" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-bold text-white">{activeContent.sideTitle}</p>
-                <p className="text-sm leading-6 text-white/80">{activeContent.sideText}</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </header>
