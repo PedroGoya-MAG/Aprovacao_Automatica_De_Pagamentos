@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const DEFAULT_AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_access_token";
+const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_access_token";
 const DASH_BENEFICIO_CLAIM = "DashBeneficio";
 
 const DASH_BENEFICIO_ROLES = {
@@ -42,10 +42,6 @@ const ROLE_FEATURES: Record<DashBeneficioRole, ReadonlySet<DashboardFeature>> = 
 
 function readEnv(key: string) {
   return process.env[key]?.trim() || "";
-}
-
-function getAuthAccessTokenCookieName() {
-  return readEnv("AUTH_ACCESS_TOKEN_COOKIE") || DEFAULT_AUTH_ACCESS_TOKEN_COOKIE;
 }
 
 function isAuthEnabled() {
@@ -174,7 +170,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const accessToken = request.cookies.get(getAuthAccessTokenCookieName())?.value;
+  const accessToken = request.cookies.get(AUTH_ACCESS_TOKEN_COOKIE)?.value;
   const role = accessToken ? resolveRoleFromAccessToken(accessToken) : null;
 
   if (role) {
