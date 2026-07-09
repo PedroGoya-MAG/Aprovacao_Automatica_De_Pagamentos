@@ -1,5 +1,7 @@
+import { isAuthEnabled, readAuthEnv } from "@/lib/auth/auth-enabled";
+
 function readEnv(key: string) {
-  return process.env[key]?.trim() || "";
+  return readAuthEnv(key);
 }
 
 export function getAppBaseUrl() {
@@ -24,20 +26,7 @@ export function getAppBaseUrl() {
   return url.origin;
 }
 
-export function isAuthEnabled() {
-  const explicit = readEnv("AUTH_ENABLED");
-
-  if (explicit) {
-    return explicit === "true";
-  }
-
-  return Boolean(
-    readEnv("AUTH_IDENTIDADE_AUTHORIZE_URL") &&
-      readEnv("AUTH_IDENTIDADE_TOKEN_URL") &&
-      readEnv("AUTH_IDENTIDADE_CLIENT_ID") &&
-      readEnv("AUTH_IDENTIDADE_CLIENT_SECRET")
-  );
-}
+export { isAuthEnabled };
 
 export function getAuthAuthorizeUrl() {
   return readEnv("AUTH_IDENTIDADE_AUTHORIZE_URL");
