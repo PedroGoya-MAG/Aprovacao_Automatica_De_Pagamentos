@@ -107,16 +107,6 @@ export function MonthlyShell({ batches, monthOptions, initialSummary, initialSer
   return (
     <div className="space-y-6">
       <section className="panel px-5 py-5 sm:px-6">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--brand)]">Visao mensal</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Leitura gerencial e analitica do periodo</h2>
-          <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            Analise rapidamente o comportamento do mes, os volumes recebidos e os principais sinais de atencao que passaram pela aprovacao operacional.
-          </p>
-        </div>
-      </section>
-
-      <section className="panel px-5 py-5 sm:px-6">
         <div className="grid gap-4 md:grid-cols-[260px_220px] xl:grid-cols-[260px_220px_minmax(0,1fr)]">
           <label className="space-y-2 text-sm text-slate-700">
             <span className="font-semibold">Mes de analise</span>

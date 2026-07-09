@@ -22,7 +22,7 @@ export default async function Home() {
   return (
     <main className="min-h-screen w-full">
       <AppHeader activeTab="approvals" />
-      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 px-4 py-5 sm:px-6 xl:px-8">
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-5 px-3 py-4 sm:px-5 lg:px-6 xl:px-8 2xl:gap-6 2xl:py-5">
         <DashboardShell
           initialBatches={batches}
           initialSummary={initialSummary}

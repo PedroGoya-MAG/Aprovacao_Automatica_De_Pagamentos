@@ -221,16 +221,6 @@ export function HistoryShell({ initialBatches, initialSummary, competences }: Hi
 
   return (
     <div className="space-y-6">
-      <section className="panel px-5 py-5 sm:px-6">
-        <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--brand)]">Historico geral</p>
-          <h2 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">Consulta de lotes e pagamentos processados</h2>
-          <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            Acompanhe o que entrou, foi aprovado, rejeitado ou sinalizado para revisão ao longo do período, com leitura executiva por lote e detalhamento completo dos pagamentos processados.
-          </p>
-        </div>
-      </section>
-
       <section className="grid gap-4 xl:grid-cols-6">
         <SummaryCard label="Lotes aprovados" value={String(summary.approvedBatchCount)} hint="Processados sem rejeicao" icon={ShieldCheck} tone="success" />
         <SummaryCard label="Lotes mistos" value={String(summary.mixedBatchCount)} hint="Com aprovados e rejeitados" icon={Layers3} tone="warning" />
