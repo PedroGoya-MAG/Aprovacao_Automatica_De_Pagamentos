@@ -1,7 +1,7 @@
 import { type HistoricalPayment } from "@/types/insights";
 
 export async function getHistoricalPaymentsByBatch(loteId: string): Promise<HistoricalPayment[]> {
-  const response = await fetch(`/api/historico/lotes/${loteId}/pagamentos`, {
+  const response = await fetch(`/api/bff/history/batches/${loteId}/payments`, {
     method: "GET",
     cache: "no-store"
   });

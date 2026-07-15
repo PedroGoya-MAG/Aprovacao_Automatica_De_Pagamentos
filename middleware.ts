@@ -1,9 +1,27 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { canAccessPath, getDefaultRouteForRole } from "@/lib/auth/access";
-import { isAuthEnabled } from "@/lib/auth/config";
-import { canAccessFeature, DASHBOARD_FEATURES } from "@/lib/auth/roles";
-import { AUTH_ACCESS_TOKEN_COOKIE, resolveSessionFromAccessToken } from "@/lib/auth/token-session";
+import {
+  canAccessFeature,
+  canAccessPath,
+  DASHBOARD_FEATURES,
+  getDashBeneficioRoleFromPayload,
+  getDefaultRouteForRole,
+  type DashBeneficioRole
+} from "@/lib/auth/authorization";
+import { isAuthEnabled } from "@/lib/auth/auth-enabled";
+import { decodeJwtPayload, isJwtExpired } from "@/lib/auth/jwt";
+
+const AUTH_ACCESS_TOKEN_COOKIE = "mag_identidade_access_token";
+
+function resolveRoleFromAccessToken(accessToken: string): DashBeneficioRole | null {
+  const payload = decodeJwtPayload(accessToken);
+
+  if (!payload || isJwtExpired(payload)) {
+    return null;
+  }
+
+  return getDashBeneficioRoleFromPayload(payload);
+}
 
 function isProtectedPath(pathname: string) {
   return (
@@ -12,8 +30,7 @@ function isProtectedPath(pathname: string) {
     pathname.startsWith("/visao-mensal") ||
     pathname.startsWith("/tesouraria") ||
     pathname.startsWith("/api/aprovacoes") ||
-    pathname.startsWith("/api/historico") ||
-    pathname.startsWith("/api/visao-mensal") ||
+    pathname.startsWith("/api/bff") ||
     pathname.startsWith("/api/tesouraria")
   );
 }
@@ -34,21 +51,21 @@ export function middleware(request: NextRequest) {
   }
 
   const accessToken = request.cookies.get(AUTH_ACCESS_TOKEN_COOKIE)?.value;
-  const session = accessToken ? resolveSessionFromAccessToken(accessToken) : null;
+  const role = accessToken ? resolveRoleFromAccessToken(accessToken) : null;
 
-  if (session) {
-    if (!canAccessPath(session.user.role, pathname)) {
+  if (role) {
+    if (!canAccessPath(role, pathname)) {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ message: "Acesso negado para este perfil." }, { status: 403 });
       }
 
-      return NextResponse.redirect(new URL(getDefaultRouteForRole(session.user.role), request.url));
+      return NextResponse.redirect(new URL(getDefaultRouteForRole(role), request.url));
     }
 
     if (
-      pathname.startsWith("/api/aprovacoes") &&
+      (pathname.startsWith("/api/aprovacoes") || pathname.startsWith("/api/bff")) &&
       request.method !== "GET" &&
-      !canAccessFeature(session.user.role, DASHBOARD_FEATURES.APPROVALS_MANAGE)
+      !canAccessFeature(role, DASHBOARD_FEATURES.APPROVALS_MANAGE)
     ) {
       return NextResponse.json({ message: "Perfil sem permissao para alterar aprovacoes." }, { status: 403 });
     }
@@ -72,8 +89,7 @@ export const config = {
     "/visao-mensal/:path*",
     "/tesouraria/:path*",
     "/api/aprovacoes/:path*",
-    "/api/historico/:path*",
-    "/api/visao-mensal/:path*",
+    "/api/bff/:path*",
     "/api/tesouraria/:path*"
   ]
 };
